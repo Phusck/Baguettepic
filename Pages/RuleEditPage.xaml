@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Baguettepic.Pages.RuleEditPage"
+             Title="Edit Rule">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" Padding="16" RowSpacing="12">
+        <VerticalStackLayout Spacing="6">
+            <Label Text="Name" FontSize="16" />
+            <Entry x:Name="NameEntry"
+                   Placeholder="Rule name"
+                   FontSize="18" />
+        </VerticalStackLayout>
+
+        <Label Grid.Row="1"
+               Text="Description (Markdown)"
+               FontSize="16" />
+
+        <Editor x:Name="DescriptionEditor"
+                Grid.Row="2"
+                Placeholder="Write the rule in Markdown"
+                AutoSize="Disabled"
+                FontSize="16" />
+
+        <Label x:Name="ErrorLabel"
+               Grid.Row="3"
+               IsVisible="False"
+               TextColor="{StaticResource Danger}" />
+
+        <Button Grid.Row="4"
+                Text="Save"
+                Clicked="OnSaveClicked" />
+    </Grid>
+</ContentPage>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Baguettepic.Pages.RuleDetailPage"
+             Title="Rule">
+
+    <Grid RowDefinitions="Auto,*,Auto" Padding="16" RowSpacing="12">
+        <Label x:Name="NameLabel"
+               Style="{StaticResource Title}" />
+
+        <WebView x:Name="DescriptionView"
+                 Grid.Row="1"
+                 Navigating="OnDescriptionNavigating" />
+
+        <Button x:Name="EditButton"
+                Grid.Row="2"
+                Text="Edit"
+                IsVisible="False"
+                Clicked="OnEditClicked" />
+    </Grid>
+</ContentPage>

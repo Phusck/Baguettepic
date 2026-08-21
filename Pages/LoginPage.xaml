@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Baguettepic.Pages.LoginPage"
+             Title="Login"
+             Shell.NavBarIsVisible="False">
+
+    <Grid>
+        <VerticalStackLayout
+            VerticalOptions="Center"
+            HorizontalOptions="Center"
+            MaximumWidthRequest="360"
+            Padding="24"
+            Spacing="16">
+
+            <Label Text="Baguettepic"
+                   Style="{StaticResource Headline}"
+                   HorizontalTextAlignment="Center" />
+            <Label Text="Army builder"
+                   Style="{StaticResource SubHeadline}"
+                   HorizontalTextAlignment="Center" />
+
+            <Label Text="Sign in as"
+                   Margin="0,12,0,0"
+                   FontSize="16" />
+
+            <HorizontalStackLayout Spacing="24" HorizontalOptions="Center">
+                <RadioButton x:Name="GuestRadio"
+                             Content="Guest"
+                             GroupName="Role"
+                             IsChecked="True"
+                             CheckedChanged="OnRoleChanged" />
+                <RadioButton x:Name="AdminRadio"
+                             Content="Admin"
+                             GroupName="Role"
+                             CheckedChanged="OnRoleChanged" />
+            </HorizontalStackLayout>
+
+            <VerticalStackLayout x:Name="PasswordSection"
+                                 IsVisible="False"
+                                 Spacing="8">
+                <Label Text="Password" />
+                <Entry x:Name="PasswordEntry"
+                       IsPassword="True"
+                       Placeholder="Admin password"
+                       ReturnType="Go"
+                       Completed="OnLoginClicked" />
+            </VerticalStackLayout>
+
+            <Label x:Name="ErrorLabel"
+                   IsVisible="False"
+                   TextColor="{StaticResource Danger}"
+                   HorizontalTextAlignment="Center" />
+
+            <Button Text="Log in"
+                    Clicked="OnLoginClicked" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:Baguettepic.Models"
+             xmlns:pages="clr-namespace:Baguettepic.Pages"
+             x:Class="Baguettepic.Pages.RulesPage"
+             Title="Rules">
+
+    <ContentPage.Resources>
+        <DataTemplate x:Key="RuleItemTemplate" x:DataType="models:RuleListItem">
+            <VerticalStackLayout Padding="4,14">
+                <VerticalStackLayout.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnRuleTapped" CommandParameter="{Binding .}" />
+                </VerticalStackLayout.GestureRecognizers>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <Label Text="{Binding Name}"
+                           Style="{StaticResource Title}"
+                           FontSize="20"
+                           LineBreakMode="WordWrap" />
+                    <Label Grid.Column="1"
+                           Text="{Binding Kind}"
+                           FontSize="12"
+                           VerticalOptions="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                </Grid>
+                <BoxView HeightRequest="1"
+                         Margin="0,14,0,0"
+                         Color="{AppThemeBinding Light={StaticResource Brass}, Dark={StaticResource Gray600}}" />
+            </VerticalStackLayout>
+        </DataTemplate>
+        <DataTemplate x:Key="DividerItemTemplate">
+            <Grid Padding="4,8" InputTransparent="True">
+                <BoxView HeightRequest="2"
+                         VerticalOptions="Center"
+                         Color="{AppThemeBinding Light={StaticResource Brass}, Dark={StaticResource Gold}}" />
+            </Grid>
+        </DataTemplate>
+        <pages:RuleSearchTemplateSelector x:Key="RuleSearchSelector"
+                                          RuleTemplate="{StaticResource RuleItemTemplate}"
+                                          DividerTemplate="{StaticResource DividerItemTemplate}" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,Auto,*" Padding="16" RowSpacing="12">
+        <Border Grid.Row="0"
+                StrokeThickness="1"
+                Stroke="{AppThemeBinding Light={StaticResource Brass}, Dark={StaticResource Gold}}"
+                StrokeShape="Rectangle"
+                BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+                Padding="12,4">
+            <Entry x:Name="SearchEntry"
+                   Placeholder="Search rules"
+                   FontSize="22"
+                   FontFamily="OpenSansRegular"
+                   ClearButtonVisibility="WhileEditing"
+                   ReturnType="Search"
+                   TextChanged="OnSearchTextChanged" />
+        </Border>
+
+        <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <Label x:Name="StatusLabel"
+                   FontSize="14"
+                   VerticalOptions="Center"
+                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+            <Button x:Name="AddNewButton"
+                    Grid.Column="1"
+                    Text="Add New"
+                    IsVisible="False"
+                    Clicked="OnAddNewClicked" />
+        </Grid>
+
+        <Grid Grid.Row="2">
+            <CollectionView x:Name="RulesList"
+                            ItemTemplate="{StaticResource RuleSearchSelector}">
+                <CollectionView.EmptyView>
+                    <Label Text="No rules match."
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           Margin="24" />
+                </CollectionView.EmptyView>
+            </CollectionView>
+
+            <ActivityIndicator x:Name="BusyIndicator"
+                               IsRunning="False"
+                               IsVisible="False"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center" />
+        </Grid>
+    </Grid>
+</ContentPage>
