@@ -1,2 +1,2 @@
-# Baguttepic
+# Baguettepic
 Palladium NetEpic 3
