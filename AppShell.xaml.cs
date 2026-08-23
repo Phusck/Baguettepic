@@ -16,5 +16,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute("CreateArmy", typeof(CreateArmyPage));
         Routing.RegisterRoute("ArmyBuilder", typeof(ArmyBuilderPage));
         Routing.RegisterRoute("FormationPicker", typeof(FormationPickerPage));
+        Routing.RegisterRoute("FormationDetachments", typeof(FormationDetachmentsPage));
+        Routing.RegisterRoute("BaseDetail", typeof(BaseDetailPage));
     }
 }

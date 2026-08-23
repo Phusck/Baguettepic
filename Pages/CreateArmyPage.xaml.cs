@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using Baguettepic.Models;
 using Baguettepic.Services;
 using MySqlConnector;
@@ -6,9 +7,14 @@ namespace Baguettepic.Pages;
 
 public partial class CreateArmyPage : ContentPage
 {
+    readonly ObservableCollection<CodexOption> _visible = [];
+    IReadOnlyList<CodexOption> _all = [];
+    CodexOption? _selected;
+
     public CreateArmyPage()
     {
         InitializeComponent();
+        CodexList.ItemsSource = _visible;
     }
 
     protected override async void OnAppearing()
@@ -21,10 +27,13 @@ public partial class CreateArmyPage : ContentPage
     {
         try
         {
-            var codices = await DatabaseService.Instance.GetCodicesAsync();
-            CodexPicker.ItemsSource = codices.ToList();
-            if (CodexPicker.SelectedIndex < 0 && codices.Count > 0)
-                CodexPicker.SelectedIndex = 0;
+            _all = await DatabaseService.Instance.GetCodicesAsync();
+            if (_selected is null && _all.Count > 0)
+                _selected = _all[0];
+            else if (_selected is not null)
+                _selected = _all.FirstOrDefault(c => c.Id == _selected.Id) ?? _all.FirstOrDefault();
+
+            ApplyFilter(CodexFilterEntry.Text);
         }
         catch (Exception ex)
         {
@@ -32,6 +41,32 @@ public partial class CreateArmyPage : ContentPage
             ErrorLabel.IsVisible = true;
             System.Diagnostics.Debug.WriteLine(ex);
         }
+    }
+
+    void OnCodexFilterTextChanged(object? sender, TextChangedEventArgs e) =>
+        ApplyFilter(e.NewTextValue);
+
+    void ApplyFilter(string? query)
+    {
+        var term = (query ?? string.Empty).Trim();
+        IEnumerable<CodexOption> matches = _all;
+        if (term.Length > 0)
+        {
+            matches = _all.Where(c =>
+                c.Name.Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
+
+        _visible.Clear();
+        foreach (var item in matches)
+            _visible.Add(item);
+
+        CodexList.SelectedItem = _visible.FirstOrDefault(c => c.Id == _selected?.Id);
+    }
+
+    void OnCodexSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (e.CurrentSelection.FirstOrDefault() is CodexOption codex)
+            _selected = codex;
     }
 
     async void OnCreateClicked(object? sender, EventArgs e)
@@ -45,7 +80,7 @@ public partial class CreateArmyPage : ContentPage
             return;
         }
 
-        if (CodexPicker.SelectedItem is not CodexOption codex)
+        if (_selected is null)
         {
             ErrorLabel.Text = "Choose a Codex.";
             ErrorLabel.IsVisible = true;
@@ -61,7 +96,7 @@ public partial class CreateArmyPage : ContentPage
 
         try
         {
-            var id = await DatabaseService.Instance.CreateArmyAsync(name, codex.Id, pointsLimit, string.Empty);
+            var id = await DatabaseService.Instance.CreateArmyAsync(name, _selected.Id, pointsLimit, string.Empty);
             await Shell.Current.GoToAsync($"ArmyBuilder?id={id}");
         }
         catch (MySqlException ex) when (ex.ErrorCode == MySqlErrorCode.DuplicateKeyEntry)

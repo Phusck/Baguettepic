@@ -92,6 +92,23 @@ public partial class ArmyBuilderPage : ContentPage
             await ChangeQuantityAsync(entry, 0);
     }
 
+    async void OnBasesClicked(object? sender, EventArgs e)
+    {
+        if (EntryFrom(sender) is not { } entry)
+            return;
+
+        try
+        {
+            await FormationNavigation.OpenAsync(entry.FormationId);
+        }
+        catch (Exception ex)
+        {
+            StatusLabel.TextColor = Colors.IndianRed;
+            StatusLabel.Text = "Could not open that formation.";
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+    }
+
     async Task ChangeQuantityAsync(ArmyEntry entry, int quantity)
     {
         try

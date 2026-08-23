@@ -1,4 +1,4 @@
--- Dummy Tyranid army using slave detachments that already have unit profiles.
+-- Dummy Tyranid army buying support formations that already have unit profiles.
 -- Synapse cards are not in the Codex yet, so this list cannot generate Command Points.
 
 SET NAMES utf8mb4;

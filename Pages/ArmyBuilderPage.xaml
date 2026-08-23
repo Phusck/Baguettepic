@@ -46,6 +46,8 @@
                                         Clicked="OnPlusClicked" />
                                 <Button Text="Remove"
                                         Clicked="OnRemoveClicked" />
+                                <Button Text="Bases"
+                                        Clicked="OnBasesClicked" />
                             </HorizontalStackLayout>
                             <BoxView HeightRequest="1"
                                      Margin="0,14,0,0"

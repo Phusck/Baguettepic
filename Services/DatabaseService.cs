@@ -184,13 +184,19 @@ public sealed class DatabaseService
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = """
             SELECT a.ArmyId, a.CodexId, a.ArmyName, c.CodexName, a.PointsLimit, a.Notes,
-                   f.FormationId, f.FormationName, f.Contents, af.Quantity, f.PointsCost, f.CommandPoints, f.Class
+                   f.FormationId, f.FormationName, f.Contents, af.Quantity, f.PointsCost, f.CommandPoints,
+                   COALESCE((
+                       SELECT MIN(d.Class)
+                       FROM FormationDetachment fd
+                       JOIN Detachment d ON d.DetachmentId = fd.DetachmentId
+                       WHERE fd.FormationId = f.FormationId
+                   ), 0) AS Class
             FROM Army a
             JOIN Codex c ON c.CodexId = a.CodexId
             LEFT JOIN ArmyFormation af ON af.ArmyId = a.ArmyId
             LEFT JOIN Formation f ON f.FormationId = af.FormationId
             WHERE a.ArmyId = @id
-            ORDER BY f.Class, f.FormationName
+            ORDER BY Class, f.FormationName
             """;
         cmd.Parameters.AddWithValue("@id", armyId);
 
@@ -254,12 +260,17 @@ public sealed class DatabaseService
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = """
             SELECT f.FormationId, f.FormationName, k.KindName, f.Contents,
-                   f.PointsCost, f.CommandPoints, f.Class
+                   f.PointsCost, f.CommandPoints,
+                   COALESCE((
+                       SELECT MIN(d.Class)
+                       FROM FormationDetachment fd
+                       JOIN Detachment d ON d.DetachmentId = fd.DetachmentId
+                       WHERE fd.FormationId = f.FormationId
+                   ), 0) AS Class
             FROM Formation f
             JOIN FormationKind k ON k.FormationKindId = f.FormationKindId
             WHERE f.CodexId = @codexId
-              AND f.PointsCost > 0
-            ORDER BY k.FormationKindId, f.Class, f.FormationName
+            ORDER BY k.FormationKindId, Class, f.FormationName
             """;
         cmd.Parameters.AddWithValue("@codexId", codexId);
 
@@ -280,6 +291,209 @@ public sealed class DatabaseService
         }
 
         return results;
+    }
+
+    public async Task<FormationRoster?> GetFormationRosterAsync(int formationId, CancellationToken cancellationToken = default)
+    {
+        await using var conn = await OpenAsync(cancellationToken);
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT f.FormationId, f.FormationName,
+                   d.DetachmentId, d.DetachmentName, d.CommandPoints, d.Class,
+                   b.BaseId, b.BaseName, dc.BaseCount, b.Class AS BaseClass
+            FROM Formation f
+            LEFT JOIN FormationDetachment fd ON fd.FormationId = f.FormationId
+            LEFT JOIN Detachment d ON d.DetachmentId = fd.DetachmentId
+            LEFT JOIN DetachmentComposition dc ON dc.DetachmentId = d.DetachmentId
+            LEFT JOIN `Base` b ON b.BaseId = dc.BaseId
+            WHERE f.FormationId = @id
+            ORDER BY d.Class, d.DetachmentName, b.BaseName
+            """;
+        cmd.Parameters.AddWithValue("@id", formationId);
+
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        FormationRoster? roster = null;
+        var detachments = new List<DetachmentGroup>();
+        DetachmentGroup? current = null;
+        var bases = new List<DetachmentBaseRow>();
+
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            roster ??= new FormationRoster
+            {
+                FormationId = reader.GetInt32("FormationId"),
+                FormationName = reader.GetString("FormationName"),
+                Detachments = detachments
+            };
+
+            if (reader.IsDBNull(reader.GetOrdinal("DetachmentId")))
+                continue;
+
+            var detachmentId = reader.GetInt32("DetachmentId");
+            if (current is null || current.DetachmentId != detachmentId)
+            {
+                bases = [];
+                current = new DetachmentGroup
+                {
+                    DetachmentId = detachmentId,
+                    DetachmentName = reader.GetString("DetachmentName"),
+                    CommandPoints = reader.GetInt32("CommandPoints"),
+                    Class = reader.GetInt32("Class"),
+                    Bases = bases
+                };
+                detachments.Add(current);
+            }
+
+            if (reader.IsDBNull(reader.GetOrdinal("BaseId")))
+                continue;
+
+            bases.Add(new DetachmentBaseRow
+            {
+                BaseId = reader.GetInt32("BaseId"),
+                BaseName = reader.GetString("BaseName"),
+                BaseCount = reader.GetInt32("BaseCount"),
+                Class = reader.GetInt32("BaseClass"),
+                DetachmentName = current.DetachmentName
+            });
+        }
+
+        return roster;
+    }
+
+    public async Task<BaseProfile?> GetBaseProfileAsync(int baseId, string? detachmentName = null, CancellationToken cancellationToken = default)
+    {
+        await using var conn = await OpenAsync(cancellationToken);
+
+        await using var baseCmd = conn.CreateCommand();
+        baseCmd.CommandText = """
+            SELECT BaseId, BaseName, ImagePath, DestructionPoints, Morale, `Class`,
+                   Movement, `Save`, FA
+            FROM `Base`
+            WHERE BaseId = @id
+            LIMIT 1
+            """;
+        baseCmd.Parameters.AddWithValue("@id", baseId);
+
+        int id;
+        string name;
+        string imagePath;
+        int destructionPoints;
+        int morale;
+        int @class;
+        int movement;
+        string save;
+        int fa;
+        await using (var reader = await baseCmd.ExecuteReaderAsync(cancellationToken))
+        {
+            if (!await reader.ReadAsync(cancellationToken))
+                return null;
+
+            id = reader.GetInt32("BaseId");
+            name = reader.GetString("BaseName");
+            imagePath = reader.GetString("ImagePath");
+            destructionPoints = reader.GetInt32("DestructionPoints");
+            morale = reader.GetInt32("Morale");
+            @class = reader.GetInt32("Class");
+            movement = reader.GetInt32("Movement");
+            save = reader.GetString("Save");
+            fa = reader.GetInt32("FA");
+        }
+
+        var abilities = new List<AbilityLink>();
+        await using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = """
+                SELECT sa.SpecialAbilityId, sa.SpecialAbilityName
+                FROM BaseSpecialAbility bsa
+                JOIN SpecialAbility sa ON sa.SpecialAbilityId = bsa.SpecialAbilityId
+                WHERE bsa.BaseId = @id
+                ORDER BY sa.SpecialAbilityName
+                """;
+            cmd.Parameters.AddWithValue("@id", baseId);
+            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                abilities.Add(new AbilityLink
+                {
+                    Id = reader.GetInt32("SpecialAbilityId"),
+                    Name = reader.GetString("SpecialAbilityName")
+                });
+            }
+        }
+
+        var weapons = new List<WeaponProfile>();
+        var weaponAbilities = new Dictionary<int, List<AbilityLink>>();
+        await using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = """
+                SELECT WeaponId, `Name`, `Range`, Dice, ToHit, ArmourPenetration, FiringArc, IsTitanWeapon
+                FROM Weapon
+                WHERE BaseId = @id
+                ORDER BY WeaponId
+                """;
+            cmd.Parameters.AddWithValue("@id", baseId);
+            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var weaponId = reader.GetInt32("WeaponId");
+                weaponAbilities[weaponId] = [];
+                weapons.Add(new WeaponProfile
+                {
+                    Id = weaponId,
+                    Name = reader.GetString("Name"),
+                    Range = reader.GetString("Range"),
+                    Dice = reader.GetInt32("Dice"),
+                    ToHit = reader.GetString("ToHit"),
+                    ArmourPenetration = reader.GetInt32("ArmourPenetration"),
+                    FiringArc = reader.GetInt32("FiringArc"),
+                    IsTitanWeapon = reader.GetBoolean("IsTitanWeapon"),
+                    Abilities = weaponAbilities[weaponId]
+                });
+            }
+        }
+
+        if (weaponAbilities.Count > 0)
+        {
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = """
+                SELECT wsa.WeaponId, sa.SpecialAbilityId, sa.SpecialAbilityName
+                FROM WeaponSpecialAbility wsa
+                JOIN SpecialAbility sa ON sa.SpecialAbilityId = wsa.SpecialAbilityId
+                WHERE wsa.WeaponId IN (
+                    SELECT WeaponId FROM Weapon WHERE BaseId = @id
+                )
+                ORDER BY sa.SpecialAbilityName
+                """;
+            cmd.Parameters.AddWithValue("@id", baseId);
+            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var weaponId = reader.GetInt32("WeaponId");
+                if (!weaponAbilities.TryGetValue(weaponId, out var list))
+                    continue;
+                list.Add(new AbilityLink
+                {
+                    Id = reader.GetInt32("SpecialAbilityId"),
+                    Name = reader.GetString("SpecialAbilityName")
+                });
+            }
+        }
+
+        return new BaseProfile
+        {
+            Id = id,
+            Name = name,
+            ImagePath = imagePath,
+            Movement = movement,
+            Save = save,
+            FA = fa,
+            Morale = morale,
+            Class = @class,
+            DestructionPoints = destructionPoints,
+            Abilities = abilities,
+            Weapons = weapons,
+            DetachmentName = string.IsNullOrWhiteSpace(detachmentName) ? null : detachmentName
+        };
     }
 
     public async Task<int> CreateArmyAsync(string name, int codexId, int pointsLimit, string notes, CancellationToken cancellationToken = default)

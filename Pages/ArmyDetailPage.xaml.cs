@@ -1,3 +1,4 @@
+using Baguettepic.Models;
 using Baguettepic.Services;
 
 namespace Baguettepic.Pages;
@@ -30,6 +31,23 @@ public partial class ArmyDetailPage : ContentPage
 
     async void OnEditClicked(object? sender, EventArgs e) =>
         await Shell.Current.GoToAsync($"ArmyBuilder?id={_armyId}");
+
+    async void OnEntryTapped(object? sender, TappedEventArgs e)
+    {
+        if (e.Parameter is not ArmyEntry entry)
+            return;
+
+        try
+        {
+            await FormationNavigation.OpenAsync(entry.FormationId);
+        }
+        catch (Exception ex)
+        {
+            StatusLabel.TextColor = Colors.IndianRed;
+            StatusLabel.Text = "Could not open that formation.";
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+    }
 
     async Task LoadAsync()
     {

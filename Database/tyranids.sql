@@ -1,6 +1,6 @@
 -- Tyranids 3.0.0 unit profiles from
 -- Palladium NetEpic 3 English Latex/Tyranids 300/Unit Profiles.tex
--- Formations here are the unit profiles. Army-list detachments are seeded
+-- These rows are Bases. Formations and detachments are seeded
 -- separately in tyranids-army-formations.sql.
 -- Morale 0 means "--" or "Attached" on the printed profile.
 
@@ -14,19 +14,19 @@ SET @codexId := (SELECT CodexId FROM Codex WHERE CodexName = 'Tyranids');
 
 DELETE FROM SpecialRule WHERE CodexId = @codexId;
 
-DELETE fc
-FROM FormationComposition fc
-INNER JOIN Formation u ON u.FormationId = fc.UnitFormationId
-WHERE u.CodexId = @codexId
-  AND u.FormationName IN (
+DELETE dc
+FROM DetachmentComposition dc
+INNER JOIN `Base` b ON b.BaseId = dc.BaseId
+WHERE b.CodexId = @codexId
+  AND b.BaseName IN (
     'Barbgaunt', 'Hive Guard', 'Gargoyles', 'Alpha Genestealer',
     'Genestealers', 'Tyranid Warriors', 'Hormagaunts', 'Lictor',
     'Termagants', 'Rippers', 'Raveners'
   );
 
-DELETE FROM Formation
+DELETE FROM `Base`
 WHERE CodexId = @codexId
-  AND FormationName IN (
+  AND BaseName IN (
     'Barbgaunt', 'Hive Guard', 'Gargoyles', 'Alpha Genestealer',
     'Genestealers', 'Tyranid Warriors', 'Hormagaunts', 'Lictor',
     'Termagants', 'Rippers', 'Raveners'
@@ -35,8 +35,6 @@ WHERE CodexId = @codexId
 INSERT INTO SpecialAbility (SpecialAbilityName, Description)
 SELECT n, d FROM (
     SELECT 'Synapse (X)' AS n, 'A base with Synapse (X) is a synapse creature of the Hive Mind.\n\nAllied Tyranid detachments with the Slave ability that have at least one base within X cm of this base are in synapse range.\n\nA Slave detachment in synapse range may be given orders normally. It uses this base''s Morale value if that value is better than its own.\n\nSynapse creatures may always be given orders normally.' AS d
-    UNION ALL SELECT 'Synapse (15 cm)', 'A base with Synapse (15 cm) is a synapse creature of the Hive Mind.\n\nAllied Tyranid detachments with the Slave ability that have at least one base within 15 cm of this base are in synapse range.\n\nA Slave detachment in synapse range may be given orders normally. It uses this base''s Morale value if that value is better than its own.\n\nSynapse creatures may always be given orders normally.'
-    UNION ALL SELECT 'Synapse (20 cm)', 'A base with Synapse (20 cm) is a synapse creature of the Hive Mind.\n\nAllied Tyranid detachments with the Slave ability that have at least one base within 20 cm of this base are in synapse range.\n\nA Slave detachment in synapse range may be given orders normally. It uses this base''s Morale value if that value is better than its own.\n\nSynapse creatures may always be given orders normally.'
     UNION ALL SELECT 'Slave (Hunt)', 'A detachment with this ability is subject to the Hunt instinct.\n\nIf it is not in synapse range at the start of the Strategy Phase, it must receive an Advance or Charge order and must move towards the nearest enemy detachment. If it is not engaged in an assault after its movement, it must shoot at the nearest visible enemy detachment.'
     UNION ALL SELECT 'Slave (Nest)', 'A detachment with this ability is subject to the Nest instinct.\n\nIf it is not in synapse range at the start of the Strategy Phase, it must receive a First Fire order and may not move. It must shoot at the nearest visible enemy detachment. It cannot perform Overwatch Fire while following this instinct.'
     UNION ALL SELECT 'Slave (Devastation)', 'A detachment with this ability is subject to the Devastation instinct.\n\nIf it is not in synapse range at the start of the Strategy Phase, it must receive a Charge order if it can engage an enemy detachment this turn. Otherwise it must move towards the nearest enemy detachment as far as its Charge movement allows.'
@@ -53,46 +51,94 @@ WHERE NOT EXISTS (
     SELECT 1 FROM SpecialAbility sa WHERE sa.SpecialAbilityName = src.n
 );
 
-INSERT INTO SpecialRule (CodexId, SpecialRuleName, Description) VALUES
-(@codexId, 'Hive Mind',
- 'Tyranid armies are directed by the Hive Mind rather than by conventional command structures.\n\nSynapse creatures project a radius listed on their profile. Allied Slave detachments with at least one base inside that radius are in synapse range and may be given orders normally.\n\nA Slave detachment that is not in synapse range must follow the instinct shown in parentheses on its Slave ability.'),
-(@codexId, 'Synapse',
- 'A base with Synapse (X) is a synapse creature. Allied Slave detachments within X cm may be given orders normally and use the Synapse base''s Morale value if it is better than their own.\n\nSynapse creatures may always be given orders normally.'),
-(@codexId, 'Slave',
- 'Slave creatures require direction from the Hive Mind.\n\nWhile in synapse range they may be given orders normally. While outside synapse range they must follow their listed instinct:\n\n • Hunt: Move towards the nearest enemy. Shoot the nearest visible enemy if not engaged in an assault.\n • Nest: Remain in place on First Fire orders and shoot the nearest visible enemy. Cannot perform Overwatch Fire.\n • Devastation: Charge if an enemy can be engaged this turn; otherwise move towards the nearest enemy at Charge speed.'),
-(@codexId, 'Semi-Synaptic',
- 'A Semi-Synaptic base is a limited synapse creature. Allied Slave detachments of the matching instinct within 15 cm are treated as being in synapse range, but only for the purpose of ignoring that instinct.\n\nSemi-Synaptic bases may always be given orders normally.');
+-- One Synapse ability: keep Synapse (X) and fold instantiated radii into it.
+SET @synapseId := (SELECT SpecialAbilityId FROM SpecialAbility WHERE SpecialAbilityName = 'Synapse (X)');
 
-INSERT INTO Formation (
-    CodexId, FormationKindId, FormationName, PointsCost, DestructionPoints,
+UPDATE BaseSpecialAbility bsa
+INNER JOIN SpecialAbility sa ON sa.SpecialAbilityId = bsa.SpecialAbilityId
+LEFT JOIN BaseSpecialAbility already
+    ON already.BaseId = bsa.BaseId AND already.SpecialAbilityId = @synapseId
+SET bsa.SpecialAbilityId = @synapseId
+WHERE @synapseId IS NOT NULL
+  AND sa.SpecialAbilityName IN ('Synapse (15 cm)', 'Synapse (20 cm)', 'Synapse', 'Synnapse')
+  AND already.BaseId IS NULL;
+
+DELETE bsa
+FROM BaseSpecialAbility bsa
+INNER JOIN SpecialAbility sa ON sa.SpecialAbilityId = bsa.SpecialAbilityId
+WHERE sa.SpecialAbilityName IN ('Synapse (15 cm)', 'Synapse (20 cm)', 'Synapse', 'Synnapse');
+
+DELETE wsa
+FROM WeaponSpecialAbility wsa
+INNER JOIN SpecialAbility sa ON sa.SpecialAbilityId = wsa.SpecialAbilityId
+WHERE sa.SpecialAbilityName IN ('Synapse (15 cm)', 'Synapse (20 cm)', 'Synapse', 'Synnapse');
+
+DELETE FROM SpecialAbility
+WHERE SpecialAbilityName IN ('Synapse (15 cm)', 'Synapse (20 cm)', 'Synapse', 'Synnapse');
+
+DELETE FROM Rule
+WHERE RuleName IN ('Synapse', 'Synnapse');
+
+INSERT INTO SpecialRule (CodexId, SpecialRuleName, Description)
+SELECT @codexId, n, d FROM (
+    SELECT 'Hive Mind' AS n,
+     'Tyranid armies are directed by the Hive Mind rather than by conventional command structures.\n\nSynapse creatures project a radius listed on their profile. Allied Slave detachments with at least one base inside that radius are in synapse range and may be given orders normally.\n\nA Slave detachment that is not in synapse range must follow the instinct shown in parentheses on its Slave ability.' AS d
+    UNION ALL SELECT 'Slave',
+     'Slave creatures require direction from the Hive Mind.\n\nWhile in synapse range they may be given orders normally. While outside synapse range they must follow their listed instinct:\n\n • Hunt: Move towards the nearest enemy. Shoot the nearest visible enemy if not engaged in an assault.\n • Nest: Remain in place on First Fire orders and shoot the nearest visible enemy. Cannot perform Overwatch Fire.\n • Devastation: Charge if an enemy can be engaged this turn; otherwise move towards the nearest enemy at Charge speed.'
+    UNION ALL SELECT 'Semi-Synaptic',
+     'A Semi-Synaptic base is a limited synapse creature. Allied Slave detachments of the matching instinct within 15 cm are treated as being in synapse range, but only for the purpose of ignoring that instinct.\n\nSemi-Synaptic bases may always be given orders normally.'
+) AS src
+WHERE NOT EXISTS (
+    SELECT 1 FROM SpecialRule sr
+    WHERE sr.CodexId = @codexId AND sr.SpecialRuleName = src.n
+);
+
+SET @uq := (
+    SELECT COUNT(*)
+    FROM information_schema.statistics
+    WHERE table_schema = DATABASE()
+      AND table_name = 'SpecialRule'
+      AND index_name = 'UQ_SpecialRule_Codex_Name'
+);
+SET @sql := IF(
+    @uq = 0,
+    'ALTER TABLE SpecialRule ADD UNIQUE KEY UQ_SpecialRule_Codex_Name (CodexId, SpecialRuleName)',
+    'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+INSERT INTO `Base` (
+    CodexId, BaseName, DestructionPoints,
     Morale, `Class`, Movement, `Save`, FA, NumberOfTitanWeapons
 ) VALUES
-    (@codexId, 4, 'Barbgaunt', 0, 0, 6, 1, 10, '--', 0, 0),
-    (@codexId, 4, 'Hive Guard', 0, 0, 6, 1, 10, '4+', 2, 0),
-    (@codexId, 4, 'Gargoyles', 0, 0, 6, 1, 15, '--', 1, 0),
-    (@codexId, 4, 'Alpha Genestealer', 0, 0, 0, 1, 15, '5+', 8, 0),
-    (@codexId, 4, 'Genestealers', 0, 0, 5, 1, 15, '--', 6, 0),
-    (@codexId, 4, 'Tyranid Warriors', 0, 0, 0, 1, 10, '4+', 5, 0),
-    (@codexId, 4, 'Hormagaunts', 0, 0, 6, 1, 15, '--', 2, 0),
-    (@codexId, 4, 'Lictor', 0, 0, 5, 1, 15, '5+', 5, 0),
-    (@codexId, 4, 'Termagants', 0, 0, 6, 1, 15, '--', 1, 0),
-    (@codexId, 4, 'Rippers', 0, 0, 6, 1, 10, '--', -1, 0),
-    (@codexId, 4, 'Raveners', 0, 0, 6, 2, 20, '6+f', 4, 0);
+    (@codexId, 'Barbgaunt', 0, 6, 1, 10, '--', 0, 0),
+    (@codexId, 'Hive Guard', 0, 6, 1, 10, '4+', 2, 0),
+    (@codexId, 'Gargoyles', 0, 6, 1, 15, '--', 1, 0),
+    (@codexId, 'Alpha Genestealer', 0, 0, 1, 15, '5+', 8, 0),
+    (@codexId, 'Genestealers', 0, 5, 1, 15, '--', 6, 0),
+    (@codexId, 'Tyranid Warriors', 0, 0, 1, 10, '4+', 5, 0),
+    (@codexId, 'Hormagaunts', 0, 6, 1, 15, '--', 2, 0),
+    (@codexId, 'Lictor', 0, 5, 1, 15, '5+', 5, 0),
+    (@codexId, 'Termagants', 0, 6, 1, 15, '--', 1, 0),
+    (@codexId, 'Rippers', 0, 6, 1, 10, '--', -1, 0),
+    (@codexId, 'Raveners', 0, 6, 2, 20, '6+f', 4, 0);
 
-SET @barbgaunt := (SELECT FormationId FROM Formation WHERE CodexId = @codexId AND FormationName = 'Barbgaunt');
-SET @hiveGuard := (SELECT FormationId FROM Formation WHERE CodexId = @codexId AND FormationName = 'Hive Guard');
-SET @gargoyles := (SELECT FormationId FROM Formation WHERE CodexId = @codexId AND FormationName = 'Gargoyles');
-SET @alpha := (SELECT FormationId FROM Formation WHERE CodexId = @codexId AND FormationName = 'Alpha Genestealer');
-SET @stealers := (SELECT FormationId FROM Formation WHERE CodexId = @codexId AND FormationName = 'Genestealers');
-SET @warriors := (SELECT FormationId FROM Formation WHERE CodexId = @codexId AND FormationName = 'Tyranid Warriors');
-SET @hormagaunts := (SELECT FormationId FROM Formation WHERE CodexId = @codexId AND FormationName = 'Hormagaunts');
-SET @lictor := (SELECT FormationId FROM Formation WHERE CodexId = @codexId AND FormationName = 'Lictor');
-SET @termagants := (SELECT FormationId FROM Formation WHERE CodexId = @codexId AND FormationName = 'Termagants');
-SET @rippers := (SELECT FormationId FROM Formation WHERE CodexId = @codexId AND FormationName = 'Rippers');
-SET @raveners := (SELECT FormationId FROM Formation WHERE CodexId = @codexId AND FormationName = 'Raveners');
+SET @barbgaunt := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Barbgaunt');
+SET @hiveGuard := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Hive Guard');
+SET @gargoyles := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Gargoyles');
+SET @alpha := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Alpha Genestealer');
+SET @stealers := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Genestealers');
+SET @warriors := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Tyranid Warriors');
+SET @hormagaunts := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Hormagaunts');
+SET @lictor := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Lictor');
+SET @termagants := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Termagants');
+SET @rippers := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Rippers');
+SET @raveners := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Raveners');
 
 INSERT INTO Weapon (
-    FormationId, `Name`, `Range`, Dice, ToHit, ArmourPenetration, FiringArc, IsTitanWeapon
+    BaseId, `Name`, `Range`, Dice, ToHit, ArmourPenetration, FiringArc, IsTitanWeapon
 ) VALUES
     (@barbgaunt, 'Barbed Cannon', '45 cm', 1, '4+', 0, 360, 0),
     (@hiveGuard, 'Impaler Cannon', '45 cm', 1, '4+', -2, 360, 0),
@@ -106,18 +152,18 @@ INSERT INTO Weapon (
     (@rippers, 'Claws', '--', 0, '--', 0, 0, 0),
     (@raveners, 'Devourer', '20 cm', 2, '5+', -1, 360, 0);
 
-SET @flameJet := (SELECT WeaponId FROM Weapon WHERE FormationId = @gargoyles AND `Name` = 'Flame Jet');
-SET @alphaClaws := (SELECT WeaponId FROM Weapon WHERE FormationId = @alpha AND `Name` = 'Claws and Pincers');
+SET @flameJet := (SELECT WeaponId FROM Weapon WHERE BaseId = @gargoyles AND `Name` = 'Flame Jet');
+SET @alphaClaws := (SELECT WeaponId FROM Weapon WHERE BaseId = @alpha AND `Name` = 'Claws and Pincers');
 
-INSERT INTO FormationSpecialAbility (FormationId, SpecialAbilityId)
-SELECT f.FormationId, sa.SpecialAbilityId
+INSERT INTO BaseSpecialAbility (BaseId, SpecialAbilityId)
+SELECT b.BaseId, sa.SpecialAbilityId
 FROM (
-    SELECT @barbgaunt AS FormationId, 'Slave (Nest)' AS AbilityName
+    SELECT @barbgaunt AS BaseId, 'Slave (Nest)' AS AbilityName
     UNION ALL SELECT @hiveGuard, 'Slave (Nest)'
     UNION ALL SELECT @gargoyles, 'Infiltration'
     UNION ALL SELECT @gargoyles, 'Jump Packs'
     UNION ALL SELECT @gargoyles, 'Slave (Hunt)'
-    UNION ALL SELECT @alpha, 'Synapse (15 cm)'
+    UNION ALL SELECT @alpha, 'Synapse (X)'
     UNION ALL SELECT @alpha, 'Attached Character'
     UNION ALL SELECT @alpha, 'HQ'
     UNION ALL SELECT @alpha, 'Infiltration'
@@ -126,7 +172,7 @@ FROM (
     UNION ALL SELECT @stealers, 'Infiltration'
     UNION ALL SELECT @stealers, 'Elite (1)'
     UNION ALL SELECT @warriors, 'HQ'
-    UNION ALL SELECT @warriors, 'Synapse (20 cm)'
+    UNION ALL SELECT @warriors, 'Synapse (X)'
     UNION ALL SELECT @warriors, 'Elite (2)'
     UNION ALL SELECT @warriors, 'Regeneration (5+)'
     UNION ALL SELECT @hormagaunts, 'Slave (Devastation)'
@@ -139,8 +185,8 @@ FROM (
     UNION ALL SELECT @raveners, 'Deep Strike (2)'
     UNION ALL SELECT @raveners, 'Slave (Devastation)'
     UNION ALL SELECT @raveners, 'Walker'
-) AS f
-INNER JOIN SpecialAbility sa ON sa.SpecialAbilityName = f.AbilityName;
+) AS b
+INNER JOIN SpecialAbility sa ON sa.SpecialAbilityName = b.AbilityName;
 
 INSERT INTO WeaponSpecialAbility (WeaponId, SpecialAbilityId)
 SELECT w.WeaponId, sa.SpecialAbilityId

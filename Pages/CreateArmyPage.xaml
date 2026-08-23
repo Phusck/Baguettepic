@@ -1,39 +1,89 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:Baguettepic.Models"
              x:Class="Baguettepic.Pages.CreateArmyPage"
              Title="Create Army">
 
-    <ScrollView>
-        <VerticalStackLayout Padding="16" Spacing="16">
-            <VerticalStackLayout Spacing="6">
-                <Label Text="Name" FontSize="16" />
-                <Entry x:Name="NameEntry"
-                       Placeholder="Army name"
-                       FontSize="18" />
-            </VerticalStackLayout>
-
-            <VerticalStackLayout Spacing="6">
-                <Label Text="Codex" FontSize="16" />
-                <Picker x:Name="CodexPicker"
-                        Title="Choose a Codex"
-                        ItemDisplayBinding="{Binding Name}" />
-            </VerticalStackLayout>
-
-            <VerticalStackLayout Spacing="6">
-                <Label Text="Points limit" FontSize="16" />
-                <Entry x:Name="PointsEntry"
-                       Text="3000"
-                       Keyboard="Numeric"
-                       FontSize="18" />
-            </VerticalStackLayout>
-
-            <Label x:Name="ErrorLabel"
-                   IsVisible="False"
-                   TextColor="{StaticResource Danger}" />
-
-            <Button Text="Create"
-                    Clicked="OnCreateClicked" />
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,Auto" Padding="16" RowSpacing="16">
+        <VerticalStackLayout Spacing="6">
+            <Label Text="Name" FontSize="16" />
+            <Entry x:Name="NameEntry"
+                   Placeholder="Army name"
+                   FontSize="18" />
         </VerticalStackLayout>
-    </ScrollView>
+
+        <VerticalStackLayout Grid.Row="1" Spacing="6">
+            <Label Text="Points limit" FontSize="16" />
+            <Entry x:Name="PointsEntry"
+                   Text="4000"
+                   Keyboard="Numeric"
+                   FontSize="18" />
+        </VerticalStackLayout>
+
+        <VerticalStackLayout Grid.Row="2" Spacing="6">
+            <Label Text="Codex" FontSize="16" />
+            <Border StrokeThickness="1"
+                    Stroke="{AppThemeBinding Light={StaticResource Brass}, Dark={StaticResource Gold}}"
+                    StrokeShape="Rectangle"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+                    Padding="12,4">
+                <Entry x:Name="CodexFilterEntry"
+                       Placeholder="Filter Codexes"
+                       FontSize="22"
+                       FontFamily="OpenSansRegular"
+                       ClearButtonVisibility="WhileEditing"
+                       TextChanged="OnCodexFilterTextChanged" />
+            </Border>
+        </VerticalStackLayout>
+
+        <CollectionView x:Name="CodexList"
+                        Grid.Row="3"
+                        SelectionMode="Single"
+                        SelectionChanged="OnCodexSelectionChanged">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:CodexOption">
+                    <Grid Padding="4,14">
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroupList>
+                                <VisualStateGroup Name="CommonStates">
+                                    <VisualState Name="Normal" />
+                                    <VisualState Name="Selected">
+                                        <VisualState.Setters>
+                                            <Setter Property="BackgroundColor"
+                                                    Value="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                </VisualStateGroup>
+                            </VisualStateGroupList>
+                        </VisualStateManager.VisualStateGroups>
+                        <VerticalStackLayout>
+                            <Label Text="{Binding Name}"
+                                   Style="{StaticResource Title}"
+                                   FontSize="18"
+                                   LineBreakMode="WordWrap" />
+                            <BoxView HeightRequest="1"
+                                     Margin="0,14,0,0"
+                                     Color="{AppThemeBinding Light={StaticResource Brass}, Dark={StaticResource Gray600}}" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+            <CollectionView.EmptyView>
+                <Label Text="No Codexes match."
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"
+                       Margin="24" />
+            </CollectionView.EmptyView>
+        </CollectionView>
+
+        <Label x:Name="ErrorLabel"
+               Grid.Row="4"
+               IsVisible="False"
+               TextColor="{StaticResource Danger}" />
+
+        <Button Grid.Row="5"
+                Text="Create"
+                Clicked="OnCreateClicked" />
+    </Grid>
 </ContentPage>

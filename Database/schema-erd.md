@@ -9,18 +9,22 @@ Editable Mermaid source (also rendered below on GitHub):
 ```mermaid
 erDiagram
     Codex ||--o{ Formation : contains
+    Codex ||--o{ Detachment : contains
+    Codex ||--o{ Base : contains
     Codex ||--o{ SpecialRule : defines
     Codex ||--o{ Army : has
     FormationKind ||--o{ Formation : classifies
-    Formation ||--o{ Weapon : equips
-    Formation ||--o{ FormationComposition : "parent of"
-    Formation ||--o{ FormationComposition : "unit in"
-    Formation ||--o{ FormationSpecialAbility : has
-    Formation ||--o{ ArmyFormation : selectedIn
-    SpecialAbility ||--o{ FormationSpecialAbility : appliedTo
+    Formation ||--o{ FormationDetachment : includes
+    Detachment ||--o{ FormationDetachment : usedIn
+    Detachment ||--o{ DetachmentComposition : contains
+    Base ||--o{ DetachmentComposition : "base in"
+    Base ||--o{ Weapon : equips
+    Base ||--o{ BaseSpecialAbility : has
+    SpecialAbility ||--o{ BaseSpecialAbility : appliedTo
     SpecialAbility ||--o{ WeaponSpecialAbility : appliedTo
     Weapon ||--o{ WeaponSpecialAbility : has
     Army ||--o{ ArmyFormation : includes
+    Formation ||--o{ ArmyFormation : selectedIn
 
     Codex {
         int CodexId PK
@@ -41,6 +45,28 @@ erDiagram
         int CommandPoints
         varchar Contents
         int DestructionPoints
+    }
+
+    Detachment {
+        int DetachmentId PK
+        int CodexId FK
+        varchar DetachmentName
+        int CommandPoints
+        int Class
+    }
+
+    FormationDetachment {
+        int FormationId PK_FK
+        int DetachmentId PK_FK
+        int Quantity
+    }
+
+    Base {
+        int BaseId PK
+        int CodexId FK
+        varchar BaseName
+        varchar ImagePath
+        int DestructionPoints
         int Morale
         int Class
         int Movement
@@ -49,15 +75,15 @@ erDiagram
         int NumberOfTitanWeapons
     }
 
-    FormationComposition {
-        int FormationId PK_FK
-        int UnitFormationId PK_FK
+    DetachmentComposition {
+        int DetachmentId PK_FK
+        int BaseId PK_FK
         int BaseCount
     }
 
     Weapon {
         int WeaponId PK
-        int FormationId FK
+        int BaseId FK
         varchar Name
         varchar Range
         int Dice
@@ -73,8 +99,8 @@ erDiagram
         text Description
     }
 
-    FormationSpecialAbility {
-        int FormationId PK_FK
+    BaseSpecialAbility {
+        int BaseId PK_FK
         int SpecialAbilityId PK_FK
     }
 
@@ -86,7 +112,7 @@ erDiagram
     SpecialRule {
         int SpecialRuleId PK
         int CodexId FK
-        varchar SpecialRuleName
+        varchar SpecialRuleName UK
         text Description
     }
 
@@ -117,11 +143,14 @@ erDiagram
 | --- | --- |
 | `Codex` | Faction / army book (e.g. Tyranids) |
 | `FormationKind` | Lookup for formation category (Mandatory, Company, Special, Support, Option, Limited) |
-| `Formation` | Unit profile or detachment definition |
-| `FormationComposition` | Which unit formations make up a detachment (`BaseCount`) |
-| `Weapon` | Weapons belonging to a formation |
+| `Formation` | Purchasable army-list card. The army builder buys these. |
+| `FormationDetachment` | Which detachments a formation contains (`Quantity`) |
+| `Detachment` | Table-top group of bases |
+| `DetachmentComposition` | Which bases make up a detachment (`BaseCount`) |
+| `Base` | Unit profile (stats, weapons, abilities, optional image path) |
+| `Weapon` | Weapons belonging to a base |
 | `SpecialAbility` | Shared ability definitions |
-| `FormationSpecialAbility` | Many-to-many: formations ↔ abilities |
+| `BaseSpecialAbility` | Many-to-many: bases ↔ abilities |
 | `WeaponSpecialAbility` | Many-to-many: weapons ↔ abilities |
 | `SpecialRule` | Codex-scoped special rules |
 | `Rule` | Standalone rules (no FK relationships yet) |
@@ -130,7 +159,7 @@ erDiagram
 
 ## Cardinality notes
 
-- A **Codex** owns many **Formations**, **SpecialRules**, and **Armies**.
-- A **Formation** may contain other formations via **FormationComposition** (self-referencing parent/unit pair).
-- **SpecialAbility** is reused by both formations and weapons through junction tables.
+- A **Codex** owns many **Formations**, **Detachments**, **Bases**, **SpecialRules**, and **Armies**.
+- An **Army** buys **Formations**. A **Formation** holds one or more **Detachments**. A **Detachment** holds one or more **Bases**.
+- **SpecialAbility** is reused by both bases and weapons through junction tables.
 - **Rule** is present in the schema but currently unlinked to other tables.

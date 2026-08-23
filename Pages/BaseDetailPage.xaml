@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:Baguettepic.Models"
+             x:Class="Baguettepic.Pages.BaseDetailPage"
+             Title="Base"
+             Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <Style x:Key="ChipButton" TargetType="Button">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="MinimumHeightRequest" Value="36" />
+            <Setter Property="MinimumWidthRequest" Value="0" />
+        </Style>
+        <Style x:Key="StatHeader" TargetType="Label">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontFamily" Value="OpenSansSemibold" />
+            <Setter Property="HorizontalTextAlignment" Value="Center" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Secondary}, Dark={StaticResource PrimaryDarkText}}" />
+        </Style>
+        <Style x:Key="StatValue" TargetType="Label">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontFamily" Value="OpenSansSemibold" />
+            <Setter Property="HorizontalTextAlignment" Value="Center" />
+            <Setter Property="Padding" Value="2,10" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Ink}, Dark={StaticResource Secondary}}" />
+        </Style>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*" Padding="16" RowSpacing="12">
+        <Button x:Name="BackButton"
+                Text="Back"
+                HorizontalOptions="Start"
+                Padding="10,6"
+                FontSize="13"
+                MinimumHeightRequest="32"
+                MinimumWidthRequest="0"
+                Clicked="OnBackClicked" />
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout x:Name="ContentHost" IsVisible="False" Spacing="16">
+                <VerticalStackLayout Spacing="4">
+                    <Label x:Name="NameLabel" Style="{StaticResource Title}" />
+                    <Label x:Name="DetachmentLabel"
+                           FontSize="14"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                </VerticalStackLayout>
+
+                <Border HeightRequest="200" StrokeThickness="1">
+                    <Grid>
+                        <Label x:Name="ImagePlaceholder"
+                               Text="No image yet"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                        <Image x:Name="BaseImage"
+                               Aspect="AspectFit"
+                               IsVisible="False" />
+                    </Grid>
+                </Border>
+
+                <Border StrokeThickness="1">
+                    <VerticalStackLayout Spacing="0">
+                        <Grid ColumnDefinitions="*,*,*,*,*,*">
+                            <Grid.BackgroundColor>
+                                <AppThemeBinding Light="{StaticResource Primary}" Dark="{StaticResource Gold}" />
+                            </Grid.BackgroundColor>
+                            <Label Grid.Column="0" Text="Move" Style="{StaticResource StatHeader}" Padding="2,10" />
+                            <Label Grid.Column="1" Text="Save" Style="{StaticResource StatHeader}" Padding="2,10" />
+                            <Label Grid.Column="2" Text="AF" Style="{StaticResource StatHeader}" Padding="2,10" />
+                            <Label Grid.Column="3" Text="Morale" Style="{StaticResource StatHeader}" Padding="2,10" />
+                            <Label Grid.Column="4" Text="Class" Style="{StaticResource StatHeader}" Padding="2,10" />
+                            <Label Grid.Column="5" Text="DP" Style="{StaticResource StatHeader}" Padding="2,10" />
+                        </Grid>
+                        <Grid x:Name="BaseStatsValues" ColumnDefinitions="*,*,*,*,*,*">
+                            <Grid.BackgroundColor>
+                                <AppThemeBinding Light="{StaticResource Gray100}" Dark="{StaticResource Gray600}" />
+                            </Grid.BackgroundColor>
+                            <Label x:Name="MoveValue" Style="{StaticResource StatValue}" />
+                            <Label x:Name="SaveValue" Grid.Column="1" Style="{StaticResource StatValue}" />
+                            <Label x:Name="AfValue" Grid.Column="2" Style="{StaticResource StatValue}" />
+                            <Label x:Name="MoraleValue" Grid.Column="3" Style="{StaticResource StatValue}" />
+                            <Label x:Name="ClassValue" Grid.Column="4" Style="{StaticResource StatValue}" />
+                            <Label x:Name="DpValue" Grid.Column="5" Style="{StaticResource StatValue}" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <VerticalStackLayout x:Name="AbilitiesHost" Spacing="8" IsVisible="False">
+                    <Label Text="Special abilities" FontSize="16" />
+                    <FlexLayout x:Name="AbilitiesLayout"
+                                Wrap="Wrap"
+                                JustifyContent="Start"
+                                AlignItems="Start" />
+                </VerticalStackLayout>
+
+                <VerticalStackLayout x:Name="WeaponsHost" Spacing="16" />
+
+                <Label x:Name="ErrorLabel"
+                       IsVisible="False"
+                       TextColor="{StaticResource Danger}" />
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <ActivityIndicator x:Name="BusyIndicator"
+                           Grid.Row="1"
+                           IsRunning="False"
+                           IsVisible="False"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+    </Grid>
+</ContentPage>
