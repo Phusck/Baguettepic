@@ -1,5 +1,6 @@
 -- Tyranids 3.0.0 unit profiles from
--- Palladium NetEpic 3 English Latex/Tyranids 300/Unit Profiles.tex
+-- https://github.com/Phusck/NetEpicFR300-EnglishTranslation
+-- Tyranids 300/Unit Profiles.tex (branch Development)
 -- These rows are Bases. Formations and detachments are seeded
 -- separately in tyranids-army-formations.sql.
 -- Morale 0 means "--" or "Attached" on the printed profile.

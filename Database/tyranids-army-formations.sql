@@ -1,5 +1,6 @@
 -- Tyranids 3.0.0 slave formations from
--- Palladium NetEpic 3 English Latex/Tyranids 300/Army Formations.tex
+-- https://github.com/Phusck/NetEpicFR300-EnglishTranslation
+-- Tyranids 300/Army Formations.tex (branch Development)
 -- FormationKind Support: each card is one formation containing one detachment.
 -- CommandPoints is negative because these consume synapse capacity.
 -- DestructionPoints is 0 until listed. Composition is linked when the

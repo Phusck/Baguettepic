@@ -1,5 +1,6 @@
 -- Core rules from Palladium NetEpic 3
--- Latest Rulebook NNN under Palladium NetEpic 3 English Latex
+-- Source: https://github.com/Phusck/NetEpicFR300-EnglishTranslation (branch Development)
+-- Latest Rulebook NNN under Rulebook 303/
 -- (currently Rulebook 303: Important Concepts, Combat Phase, Markers and Templates)
 
 SET NAMES utf8mb4;

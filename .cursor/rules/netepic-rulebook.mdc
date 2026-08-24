@@ -1,0 +1,39 @@
+---
+description: Canonical NetEpic 3 rulebook and army sources for Baguettepic data and rules work
+alwaysApply: true
+---
+
+# NetEpic rulebook source of truth
+
+Baguettepic is a companion app for Palladium NetEpic 3. Game rules, army books, and LaTeX source live in a **separate** repository — not in a local Palladium folder on disk.
+
+## Canonical repo
+
+- Repository: https://github.com/Phusck/NetEpicFR300-EnglishTranslation
+- Default branch: `Development`
+- Do **not** assume a local path such as `Palladium NetEpic 3 English Latex/…`
+
+## Important folders
+
+| Content | Path in that repo |
+|---|---|
+| Core rulebook (LaTeX) | `Rulebook 303/` |
+| Tyranids army book | `Tyranids 300/` |
+| Domain class diagram (schema inspiration) | `Rulebook 303/class-diagram.md` |
+
+Key rulebook sections under `Rulebook 303/`:
+
+- `00 - Intro/` — Important Concepts, Introduction, Preparing for Battle
+- `01 - Game Turn/` — Strategy, Movement, Combat, End phases
+- `02 - Something/` — Morale, Terrain, Titans and Praetorians
+- `03 - Special Abilities/`
+- `04 - Markers and Templates/`
+- `main.tex` / `Preamble.tex` — document entry points
+
+## Agent behavior
+
+- When seeding or editing `Database/*.sql`, special abilities, or in-app rule text, read the matching `.tex` (or diagram) from the GitHub repo above.
+- Prefer fetching from that repo (`gh api`, clone, or raw GitHub URLs on branch `Development`) over inventing rules.
+- Cite source paths relative to that repo (e.g. `Rulebook 303/01 - Game Turn/Combat Phase.tex`, `Tyranids 300/Unit Profiles.tex`).
+- Keep long rule prose out of Cursor rules; point at the files instead.
+- This app repo (`Baguettepic`) owns the MAUI client and MySQL seed/schema; the translation repo owns the printed-rules source.
