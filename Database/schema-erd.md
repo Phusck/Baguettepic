@@ -13,6 +13,7 @@ erDiagram
     Codex ||--o{ Base : contains
     Codex ||--o{ SpecialRule : defines
     Codex ||--o{ Army : has
+    AppUser ||--o{ Army : owns
     FormationKind ||--o{ Formation : classifies
     Formation ||--o{ FormationDetachment : includes
     Detachment ||--o{ FormationDetachment : usedIn
@@ -25,6 +26,7 @@ erDiagram
     Weapon ||--o{ WeaponSpecialAbility : has
     Army ||--o{ ArmyFormation : includes
     Formation ||--o{ ArmyFormation : selectedIn
+    Codex ||--o{ TitanWeapon : catalogs
 
     Codex {
         int CodexId PK
@@ -65,7 +67,7 @@ erDiagram
         int BaseId PK
         int CodexId FK
         varchar BaseName
-        varchar ImagePath
+        blob Image
         int DestructionPoints
         int Morale
         int Class
@@ -89,7 +91,6 @@ erDiagram
         int Dice
         varchar ToHit
         int ArmourPenetration
-        int FiringArc
         tinyint IsTitanWeapon
     }
 
@@ -122,18 +123,37 @@ erDiagram
         text Description
     }
 
+    AppUser {
+        int UserId PK
+        varchar Username UK
+        varchar PasswordHash
+        tinyint IsAdmin
+        tinyint MustChangePassword
+    }
+
     Army {
         int ArmyId PK
+        int UserId FK
         int CodexId FK
-        varchar ArmyName UK
+        varchar ArmyName
         int PointsLimit
-        text Notes
     }
 
     ArmyFormation {
         int ArmyId PK_FK
         int FormationId PK_FK
         int Quantity
+        json TitanWeapons
+    }
+
+    TitanWeapon {
+        int TitanWeaponId PK
+        int CodexId FK
+        varchar WeaponName UK
+        int PointsCost
+        varchar Notes
+        tinyint IsAssault
+        tinyint LimitPerTitan
     }
 ```
 
@@ -154,12 +174,15 @@ erDiagram
 | `WeaponSpecialAbility` | Many-to-many: weapons ↔ abilities |
 | `SpecialRule` | Codex-scoped special rules |
 | `Rule` | Standalone rules (no FK relationships yet) |
-| `Army` | Player army list under a codex |
-| `ArmyFormation` | Many-to-many: army ↔ formations with `Quantity` |
+| `AppUser` | App login account. Owns army lists. |
+| `Army` | Player army list under a user and a codex |
+| `ArmyFormation` | Many-to-many: army ↔ formations with `Quantity` and chosen titan weapons |
+| `TitanWeapon` | Codex catalog of purchasable titan weapons |
 
 ## Cardinality notes
 
 - A **Codex** owns many **Formations**, **Detachments**, **Bases**, **SpecialRules**, and **Armies**.
-- An **Army** buys **Formations**. A **Formation** holds one or more **Detachments**. A **Detachment** holds one or more **Bases**.
+- An **AppUser** owns many **Armies**. An **Army** buys **Formations**. A **Formation** holds one or more **Detachments**. A **Detachment** holds one or more **Bases**.
+- **TitanWeapon** is a shared catalog. Chosen weapons for a titan are stored on that army list’s `ArmyFormation.TitanWeapons` JSON.
 - **SpecialAbility** is reused by both bases and weapons through junction tables.
 - **Rule** is present in the schema but currently unlinked to other tables.

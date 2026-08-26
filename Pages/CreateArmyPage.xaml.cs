@@ -96,7 +96,7 @@ public partial class CreateArmyPage : ContentPage
 
         try
         {
-            var id = await DatabaseService.Instance.CreateArmyAsync(name, _selected.Id, pointsLimit, string.Empty);
+            var id = await DatabaseService.Instance.CreateArmyAsync(name, _selected.Id, pointsLimit);
             await Shell.Current.GoToAsync($"ArmyBuilder?id={id}");
         }
         catch (MySqlException ex) when (ex.ErrorCode == MySqlErrorCode.DuplicateKeyEntry)

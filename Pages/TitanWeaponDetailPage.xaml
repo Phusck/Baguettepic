@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Baguettepic.Pages.TitanWeaponDetailPage"
+             Title="Weapon"
+             Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <Style x:Key="ChipButton" TargetType="Button">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="MinimumHeightRequest" Value="36" />
+            <Setter Property="MinimumWidthRequest" Value="0" />
+        </Style>
+        <Style x:Key="StatHeader" TargetType="Label">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontFamily" Value="OpenSansSemibold" />
+            <Setter Property="HorizontalTextAlignment" Value="Center" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Secondary}, Dark={StaticResource PrimaryDarkText}}" />
+        </Style>
+        <Style x:Key="StatValue" TargetType="Label">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontFamily" Value="OpenSansSemibold" />
+            <Setter Property="HorizontalTextAlignment" Value="Center" />
+            <Setter Property="Padding" Value="2,10" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Ink}, Dark={StaticResource Secondary}}" />
+        </Style>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*" Padding="16" RowSpacing="12">
+        <Button Text="Back"
+                HorizontalOptions="Start"
+                Padding="10,6"
+                FontSize="13"
+                MinimumHeightRequest="32"
+                MinimumWidthRequest="0"
+                Clicked="OnBackClicked" />
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout x:Name="ContentHost" IsVisible="False" Spacing="16">
+                <VerticalStackLayout Spacing="4">
+                    <Label x:Name="NameLabel" Style="{StaticResource Title}" />
+                    <Label x:Name="CostLabel"
+                           FontSize="14"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                    <Label x:Name="NotesLabel"
+                           FontSize="15"
+                           LineBreakMode="WordWrap" />
+                </VerticalStackLayout>
+
+                <VerticalStackLayout x:Name="WeaponsHost" Spacing="16" />
+
+                <Label x:Name="ErrorLabel"
+                       IsVisible="False"
+                       TextColor="{StaticResource Danger}" />
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <ActivityIndicator x:Name="BusyIndicator"
+                           Grid.Row="1"
+                           IsRunning="False"
+                           IsVisible="False"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+    </Grid>
+</ContentPage>

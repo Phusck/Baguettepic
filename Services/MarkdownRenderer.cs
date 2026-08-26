@@ -49,6 +49,29 @@ public static class MarkdownRenderer
               pre { padding: 10px; overflow: auto; }
               ul, ol { padding-left: 1.4em; }
               blockquote { margin-left: 0; padding-left: 0.9em; border-left: 3px solid {{accent}}; color: {{muted}}; }
+              table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 0 0 1em 0;
+                font-size: 15px;
+              }
+              th, td {
+                border: 1px solid {{muted}};
+                padding: 0.45em 0.6em;
+                text-align: left;
+                vertical-align: top;
+              }
+              th {
+                background: {{accent}};
+                color: {{bg}};
+                font-weight: 600;
+              }
+              tr:nth-child(even) td { background: {{codeBg}}; }
+              th:first-child, td:first-child {
+                white-space: nowrap;
+                text-align: center;
+                width: 3.5em;
+              }
             </style>
             </head>
             <body>{{body}}</body>

@@ -1,0 +1,2 @@
+-- Figure PNGs live in Base.Image (MEDIUMBLOB).
+-- Apply migrate-base-image.sql, then run upload_base_images.py.

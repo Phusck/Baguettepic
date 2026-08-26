@@ -4,9 +4,13 @@ using Baguettepic.Services;
 namespace Baguettepic.Pages;
 
 [QueryProperty(nameof(FormationId), "formationId")]
+[QueryProperty(nameof(ArmyId), "armyId")]
+[QueryProperty(nameof(TitanIndex), "titanIndex")]
 public partial class FormationDetachmentsPage : ContentPage
 {
     int _formationId;
+    int _armyId;
+    int? _titanIndex;
 
     public FormationDetachmentsPage()
     {
@@ -17,6 +21,18 @@ public partial class FormationDetachmentsPage : ContentPage
     {
         get => _formationId.ToString();
         set => int.TryParse(value, out _formationId);
+    }
+
+    public string ArmyId
+    {
+        get => _armyId.ToString();
+        set => int.TryParse(value, out _armyId);
+    }
+
+    public string TitanIndex
+    {
+        get => _titanIndex?.ToString() ?? string.Empty;
+        set => _titanIndex = int.TryParse(value, out var index) ? index : null;
     }
 
     protected override async void OnAppearing()
@@ -64,8 +80,12 @@ public partial class FormationDetachmentsPage : ContentPage
         if (e.Parameter is not DetachmentBaseRow row)
             return;
 
+        var armyQuery = _armyId > 0
+            ? $"&armyId={_armyId}&formationId={_formationId}"
+              + (_titanIndex is int index ? $"&titanIndex={index}" : string.Empty)
+            : string.Empty;
         await Shell.Current.GoToAsync(
-            $"BaseDetail?baseId={row.BaseId}&detachmentName={Uri.EscapeDataString(row.DetachmentName)}");
+            $"BaseDetail?baseId={row.BaseId}&detachmentName={Uri.EscapeDataString(row.DetachmentName)}{armyQuery}");
     }
 
     void SetBusy(bool busy)

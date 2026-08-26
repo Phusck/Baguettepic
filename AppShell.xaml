@@ -14,6 +14,12 @@
         FlyoutItemIsVisible="False" />
 
     <ShellContent
+        Title="Change Password"
+        ContentTemplate="{DataTemplate pages:ChangePasswordPage}"
+        Route="ChangePassword"
+        FlyoutItemIsVisible="False" />
+
+    <ShellContent
         Title="Main Menu"
         ContentTemplate="{DataTemplate pages:MainMenuPage}"
         Route="MainMenu"

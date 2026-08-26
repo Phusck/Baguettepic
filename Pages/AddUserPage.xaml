@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Baguettepic.Pages.AddUserPage"
+             Title="Add User">
+
+    <Grid RowDefinitions="Auto,*,Auto,Auto" Padding="16" RowSpacing="16">
+        <VerticalStackLayout Spacing="8">
+            <Label Text="Username" FontSize="16" />
+            <Entry x:Name="UsernameEntry"
+                   Placeholder="Username"
+                   FontSize="18"
+                   ReturnType="Go"
+                   Completed="OnAddClicked" />
+            <Label Text="They will sign in with the standard password and must change it on first login."
+                   FontSize="14"
+                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+        </VerticalStackLayout>
+
+        <Label x:Name="StatusLabel"
+               Grid.Row="2"
+               IsVisible="False" />
+
+        <Button Grid.Row="3"
+                Text="Add User"
+                Clicked="OnAddClicked" />
+    </Grid>
+</ContentPage>

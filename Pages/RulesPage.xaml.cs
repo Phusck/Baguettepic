@@ -18,8 +18,9 @@ public partial class RulesPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        AddNewButton.IsVisible = SessionService.Instance.CurrentRole == UserRole.Admin;
+        AddNewButton.IsVisible = SessionService.Instance.IsAdmin;
         await SearchAsync(SearchEntry.Text);
+        SearchFieldFocus.FocusAndSelect(SearchEntry);
     }
 
     protected override void OnDisappearing()
@@ -100,7 +101,8 @@ public partial class RulesPage : ContentPage
         var descriptionMatches = new List<RuleListItem>();
         foreach (var rule in results)
         {
-            if (rule.Name.Contains(term, StringComparison.OrdinalIgnoreCase))
+            if (rule.Name.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                ParameterizedName.Matches(rule.Name, term))
                 nameMatches.Add(rule);
             else
                 descriptionMatches.Add(rule);

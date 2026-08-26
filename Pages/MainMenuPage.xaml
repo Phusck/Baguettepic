@@ -32,6 +32,12 @@
                     FontSize="18"
                     HeightRequest="56"
                     Clicked="OnLoadArmyClicked" />
+            <Button x:Name="AddUserButton"
+                    Text="Add User"
+                    FontSize="18"
+                    HeightRequest="56"
+                    IsVisible="False"
+                    Clicked="OnAddUserClicked" />
         </VerticalStackLayout>
 
         <Button Grid.Row="2"

@@ -43,7 +43,7 @@ public partial class RuleEditPage : ContentPage
     {
         base.OnAppearing();
 
-        if (SessionService.Instance.CurrentRole != UserRole.Admin)
+        if (!SessionService.Instance.IsAdmin)
         {
             await DisplayAlertAsync("Admin only", "Only an admin can add or edit rules.", "OK");
             await Shell.Current.GoToAsync("..");
@@ -87,6 +87,13 @@ public partial class RuleEditPage : ContentPage
         if (name.Length == 0)
         {
             ErrorLabel.Text = "Enter a name.";
+            ErrorLabel.IsVisible = true;
+            return;
+        }
+
+        if (ParameterizedName.HasConcreteParentheticalValue(name))
+        {
+            ErrorLabel.Text = "Use X (or Y) in parentheses, not a specific value. Put the value on the unit instead.";
             ErrorLabel.IsVisible = true;
             return;
         }

@@ -37,7 +37,7 @@ public partial class RuleDetailPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        EditButton.IsVisible = SessionService.Instance.CurrentRole == UserRole.Admin;
+        EditButton.IsVisible = SessionService.Instance.IsAdmin;
         await LoadAsync();
     }
 

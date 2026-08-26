@@ -5,10 +5,16 @@ namespace Baguettepic.Pages;
 
 [QueryProperty(nameof(BaseId), "baseId")]
 [QueryProperty(nameof(DetachmentName), "detachmentName")]
+[QueryProperty(nameof(ArmyId), "armyId")]
+[QueryProperty(nameof(FormationId), "formationId")]
+[QueryProperty(nameof(TitanIndex), "titanIndex")]
 public partial class BaseDetailPage : ContentPage
 {
     int _baseId;
     string? _detachmentName;
+    int _armyId;
+    int _formationId;
+    int? _titanIndex;
 
     public BaseDetailPage()
     {
@@ -27,6 +33,24 @@ public partial class BaseDetailPage : ContentPage
         set => _detachmentName = string.IsNullOrWhiteSpace(value) ? null : Uri.UnescapeDataString(value);
     }
 
+    public string ArmyId
+    {
+        get => _armyId.ToString();
+        set => int.TryParse(value, out _armyId);
+    }
+
+    public string FormationId
+    {
+        get => _formationId.ToString();
+        set => int.TryParse(value, out _formationId);
+    }
+
+    public string TitanIndex
+    {
+        get => _titanIndex?.ToString() ?? string.Empty;
+        set => _titanIndex = int.TryParse(value, out var index) ? index : null;
+    }
+
     protected override async void OnAppearing()
     {
         base.OnAppearing();
@@ -41,7 +65,8 @@ public partial class BaseDetailPage : ContentPage
         try
         {
             SetBusy(true);
-            var profile = await DatabaseService.Instance.GetBaseProfileAsync(_baseId, _detachmentName);
+            var profile = await DatabaseService.Instance.GetBaseProfileAsync(
+                _baseId, _detachmentName, _armyId, _formationId, _titanIndex);
             if (profile is null)
             {
                 ContentHost.IsVisible = true;
@@ -81,6 +106,17 @@ public partial class BaseDetailPage : ContentPage
             WeaponsHost.Children.Clear();
             foreach (var weapon in profile.Weapons)
                 WeaponsHost.Children.Add(CreateWeaponView(weapon));
+            if (profile.ChosenTitanWeapons.Count > 0)
+            {
+                WeaponsHost.Children.Add(new Label
+                {
+                    Text = "Chosen weapons",
+                    FontSize = 16,
+                    Margin = new Thickness(0, 8, 0, 0)
+                });
+                foreach (var weapon in profile.ChosenTitanWeapons)
+                    WeaponsHost.Children.Add(CreateWeaponView(weapon));
+            }
 
             ContentHost.IsVisible = true;
         }
@@ -101,36 +137,43 @@ public partial class BaseDetailPage : ContentPage
     {
         var header = new Grid
         {
-            ColumnDefinitions = Columns(5),
+            ColumnDefinitions = Columns(4),
             BackgroundColor = ThemeColor("Gold", "Primary")
         };
         AddHeader(header, 0, "Range");
         AddHeader(header, 1, "Dice");
         AddHeader(header, 2, "To Hit");
         AddHeader(header, 3, "AP");
-        AddHeader(header, 4, "Arc");
 
         var values = new Grid
         {
-            ColumnDefinitions = Columns(5),
+            ColumnDefinitions = Columns(4),
             BackgroundColor = ThemeColor("Gray600", "Gray100")
         };
         AddValue(values, 0, weapon.Range);
         AddValue(values, 1, weapon.DiceText);
         AddValue(values, 2, weapon.ToHit);
         AddValue(values, 3, weapon.ApText);
-        AddValue(values, 4, weapon.ArcText);
 
         var table = new Border { StrokeThickness = 1 };
         table.Content = new VerticalStackLayout { Spacing = 0, Children = { header, values } };
 
         var block = new VerticalStackLayout { Spacing = 8 };
-        block.Children.Add(new Label
+        var nameLabel = new Label
         {
-            Text = weapon.Name,
+            Text = weapon.PointsCost is int points
+                ? $"{weapon.Name}  ·  {points} pts"
+                : weapon.Name,
             Style = (Style)Application.Current!.Resources["Title"],
             FontSize = 18
-        });
+        };
+        if (weapon.TitanWeaponId is int titanWeaponId)
+        {
+            MakeTappable(nameLabel, titanWeaponId);
+            MakeTappable(table, titanWeaponId);
+        }
+
+        block.Children.Add(nameLabel);
         block.Children.Add(table);
 
         if (weapon.HasAbilities)
@@ -171,6 +214,27 @@ public partial class BaseDetailPage : ContentPage
             return;
 
         await Shell.Current.GoToAsync($"RuleDetail?id={ability.Id}&kind={Uri.EscapeDataString(ability.Kind)}");
+    }
+
+    async Task OpenTitanWeaponAsync(int titanWeaponId)
+    {
+        try
+        {
+            await FormationNavigation.OpenTitanWeaponAsync(titanWeaponId, _formationId);
+        }
+        catch (Exception ex)
+        {
+            ErrorLabel.IsVisible = true;
+            ErrorLabel.Text = "Could not open that weapon.";
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+    }
+
+    void MakeTappable(View view, int titanWeaponId)
+    {
+        var tap = new TapGestureRecognizer();
+        tap.Tapped += async (_, _) => await OpenTitanWeaponAsync(titanWeaponId);
+        view.GestureRecognizers.Add(tap);
     }
 
     void AddHeader(Grid grid, int column, string text)

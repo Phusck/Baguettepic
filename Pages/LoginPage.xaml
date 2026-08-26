@@ -20,29 +20,19 @@
                    Style="{StaticResource SubHeadline}"
                    HorizontalTextAlignment="Center" />
 
-            <Label Text="Sign in as"
-                   Margin="0,12,0,0"
-                   FontSize="16" />
+            <VerticalStackLayout Spacing="8" Margin="0,12,0,0">
+                <Label Text="Username" />
+                <Entry x:Name="UsernameEntry"
+                       Placeholder="Username"
+                       ReturnType="Next"
+                       Completed="OnUsernameCompleted" />
+            </VerticalStackLayout>
 
-            <HorizontalStackLayout Spacing="24" HorizontalOptions="Center">
-                <RadioButton x:Name="GuestRadio"
-                             Content="Guest"
-                             GroupName="Role"
-                             IsChecked="True"
-                             CheckedChanged="OnRoleChanged" />
-                <RadioButton x:Name="AdminRadio"
-                             Content="Admin"
-                             GroupName="Role"
-                             CheckedChanged="OnRoleChanged" />
-            </HorizontalStackLayout>
-
-            <VerticalStackLayout x:Name="PasswordSection"
-                                 IsVisible="False"
-                                 Spacing="8">
+            <VerticalStackLayout Spacing="8">
                 <Label Text="Password" />
                 <Entry x:Name="PasswordEntry"
                        IsPassword="True"
-                       Placeholder="Admin password"
+                       Placeholder="Password"
                        ReturnType="Go"
                        Completed="OnLoginClicked" />
             </VerticalStackLayout>

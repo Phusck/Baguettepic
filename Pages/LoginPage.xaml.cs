@@ -13,31 +13,21 @@ public partial class LoginPage : ContentPage
     {
         base.OnAppearing();
 
-        var (role, password) = await SessionService.Instance.LoadRememberedAsync();
-        AdminRadio.IsChecked = role == UserRole.Admin;
-        GuestRadio.IsChecked = role == UserRole.Guest;
+        var (username, password) = await SessionService.Instance.LoadRememberedAsync();
+        UsernameEntry.Text = username;
         PasswordEntry.Text = password;
         ErrorLabel.IsVisible = false;
-        UpdatePasswordVisibility();
     }
 
-    void OnRoleChanged(object? sender, CheckedChangedEventArgs e)
-    {
-        if (e.Value)
-            UpdatePasswordVisibility();
-    }
-
-    void UpdatePasswordVisibility()
-    {
-        PasswordSection.IsVisible = AdminRadio.IsChecked;
-    }
+    void OnUsernameCompleted(object? sender, EventArgs e) =>
+        PasswordEntry.Focus();
 
     async void OnLoginClicked(object? sender, EventArgs e)
     {
         ErrorLabel.IsVisible = false;
 
-        var role = AdminRadio.IsChecked ? UserRole.Admin : UserRole.Guest;
-        var error = await SessionService.Instance.TryLoginAsync(role, PasswordEntry.Text);
+        var error = await SessionService.Instance.TryLoginAsync(
+            UsernameEntry.Text, PasswordEntry.Text);
         if (error is not null)
         {
             ErrorLabel.Text = error;
@@ -45,6 +35,9 @@ public partial class LoginPage : ContentPage
             return;
         }
 
-        await Shell.Current.GoToAsync("//MainMenu");
+        if (SessionService.Instance.MustChangePassword)
+            await Shell.Current.GoToAsync("//ChangePassword");
+        else
+            await Shell.Current.GoToAsync("//MainMenu");
     }
 }

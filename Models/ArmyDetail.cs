@@ -7,10 +7,11 @@ public sealed class ArmyDetail
     public required string Name { get; init; }
     public required string CodexName { get; init; }
     public required int PointsLimit { get; init; }
-    public required string Notes { get; init; }
     public required IReadOnlyList<ArmyEntry> Entries { get; init; }
+    public IReadOnlyList<AbilityLink> SpecialRules { get; init; } = [];
 
     public int PointsCost => Entries.Sum(e => e.LinePoints);
     public int CommandPoints => Entries.Sum(e => e.LineCommandPoints);
+    public bool HasSpecialRules => SpecialRules.Count > 0;
     public string Summary => $"{CodexName}  ·  {PointsCost} / {PointsLimit} pts  ·  {CommandPoints} CP";
 }

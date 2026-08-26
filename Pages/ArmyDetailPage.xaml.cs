@@ -39,7 +39,7 @@ public partial class ArmyDetailPage : ContentPage
 
         try
         {
-            await FormationNavigation.OpenAsync(entry.FormationId);
+            await FormationNavigation.OpenAsync(entry.FormationId, _armyId, TitanIndexFor(entry));
         }
         catch (Exception ex)
         {
@@ -47,6 +47,70 @@ public partial class ArmyDetailPage : ContentPage
             StatusLabel.Text = "Could not open that formation.";
             System.Diagnostics.Debug.WriteLine(ex);
         }
+    }
+
+    async void OnTitanTapped(object? sender, TappedEventArgs e)
+    {
+        if (e.Parameter is not ArmyTitanSlot slot)
+            return;
+
+        try
+        {
+            await FormationNavigation.OpenAsync(slot.FormationId, _armyId, slot.TitanIndex);
+        }
+        catch (Exception ex)
+        {
+            StatusLabel.TextColor = Colors.IndianRed;
+            StatusLabel.Text = "Could not open that titan.";
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+    }
+
+    async void OnWeaponTapped(object? sender, TappedEventArgs e)
+    {
+        if (e.Parameter is not ArmyTitanWeaponItem weapon)
+            return;
+
+        try
+        {
+            await FormationNavigation.OpenTitanWeaponAsync(weapon.TitanWeaponId, weapon.FormationId);
+        }
+        catch (Exception ex)
+        {
+            StatusLabel.TextColor = Colors.IndianRed;
+            StatusLabel.Text = "Could not open that weapon.";
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+    }
+
+    static int? TitanIndexFor(ArmyEntry entry) =>
+        entry.Titans.Count == 1 ? entry.Titans[0].TitanIndex : null;
+
+    void BindFactionRules(IReadOnlyList<AbilityLink> rules)
+    {
+        FactionAbilitiesLayout.Children.Clear();
+        foreach (var rule in rules)
+        {
+            var button = new Button
+            {
+                Text = rule.Name,
+                Style = (Style)Resources["ChipButton"],
+                BindingContext = rule,
+                Margin = new Thickness(0, 0, 8, 8)
+            };
+            button.Clicked += OnFactionRuleClicked;
+            FactionAbilitiesLayout.Children.Add(button);
+        }
+
+        FactionAbilitiesHost.IsVisible = rules.Count > 0;
+    }
+
+    async void OnFactionRuleClicked(object? sender, EventArgs e)
+    {
+        if (sender is not Button { BindingContext: AbilityLink rule })
+            return;
+
+        await Shell.Current.GoToAsync($"RuleDetail?id={rule.Id}&kind={Uri.EscapeDataString(rule.Kind)}");
     }
 
     async Task LoadAsync()
@@ -60,7 +124,7 @@ public partial class ArmyDetailPage : ContentPage
             {
                 NameLabel.Text = "Army not found";
                 SummaryLabel.Text = string.Empty;
-                NotesLabel.Text = string.Empty;
+                BindFactionRules([]);
                 EntriesList.ItemsSource = null;
                 StatusLabel.Text = string.Empty;
                 return;
@@ -69,7 +133,7 @@ public partial class ArmyDetailPage : ContentPage
             Title = army.Name;
             NameLabel.Text = army.Name;
             SummaryLabel.Text = army.Summary;
-            NotesLabel.Text = army.Notes;
+            BindFactionRules(army.SpecialRules);
             EntriesList.ItemsSource = army.Entries;
             StatusLabel.ClearValue(Label.TextColorProperty);
             StatusLabel.Text = army.Entries.Count == 1 ? "1 formation" : $"{army.Entries.Count} formations";

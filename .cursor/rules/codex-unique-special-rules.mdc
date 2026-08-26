@@ -1,0 +1,18 @@
+---
+description: Codex-unique titan tables must include the faction and Titan
+alwaysApply: true
+---
+
+# Codex-unique special rules
+
+Hit location charts and titan damage-effect tables belong to one army book. Never catalog them under a generic name.
+
+Prefix the `SpecialRule` name with the faction and **Titan**:
+
+```
+✅ Tyranid Titan Hit Location Chart          ❌ Hit Location Chart
+✅ Imperial Guard Titan Hit Location Chart   ❌ Hit Location Chart
+✅ Tyranid Titan Damage Effects              ❌ Damage Effects
+```
+
+Keep them as `SpecialRule` rows on that Codex. Shared core rules stay in `Rule` / `SpecialAbility`.

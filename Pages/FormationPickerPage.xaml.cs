@@ -12,6 +12,7 @@ public partial class FormationPickerPage : ContentPage
     IReadOnlyList<FormationOption> _all = [];
     int _armyId;
     int _codexId;
+    CancellationTokenSource? _toastCts;
 
     public FormationPickerPage()
     {
@@ -37,6 +38,14 @@ public partial class FormationPickerPage : ContentPage
         await LoadAsync();
     }
 
+    protected override void OnDisappearing()
+    {
+        _toastCts?.Cancel();
+        _toastCts?.Dispose();
+        _toastCts = null;
+        base.OnDisappearing();
+    }
+
     async Task LoadAsync()
     {
         try
@@ -54,11 +63,20 @@ public partial class FormationPickerPage : ContentPage
         finally
         {
             SetBusy(false);
+            SearchFieldFocus.FocusAndSelect(SearchEntry);
         }
     }
 
     void OnSearchTextChanged(object? sender, TextChangedEventArgs e) =>
         ApplyFilter(e.NewTextValue);
+
+    async void OnSearchCompleted(object? sender, EventArgs e)
+    {
+        if (_visible.Count != 1)
+            return;
+
+        await AddFormationAsync(_visible[0]);
+    }
 
     void ApplyFilter(string? query)
     {
@@ -88,17 +106,64 @@ public partial class FormationPickerPage : ContentPage
 
         try
         {
+            await FormationNavigation.OpenAsync(formation.Id);
+        }
+        catch (Exception ex)
+        {
+            StatusLabel.TextColor = Colors.IndianRed;
+            StatusLabel.Text = "Could not open that formation.";
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+    }
+
+    async void OnAddClicked(object? sender, EventArgs e)
+    {
+        if (sender is not BindableObject bindable || bindable.BindingContext is not FormationOption formation)
+            return;
+
+        await AddFormationAsync(formation);
+    }
+
+    async Task AddFormationAsync(FormationOption formation)
+    {
+        try
+        {
             var army = await DatabaseService.Instance.GetArmyAsync(_armyId);
             var current = army?.Entries.FirstOrDefault(x => x.FormationId == formation.Id);
             var quantity = (current?.Quantity ?? 0) + 1;
             await DatabaseService.Instance.SetArmyFormationQuantityAsync(_armyId, formation.Id, quantity);
-            await Shell.Current.GoToAsync("..");
+            SearchFieldFocus.FocusAndSelect(SearchEntry);
+            await ShowAddedToastAsync(formation.Name);
         }
         catch (Exception ex)
         {
             StatusLabel.TextColor = Colors.IndianRed;
             StatusLabel.Text = "Could not add that formation.";
             System.Diagnostics.Debug.WriteLine(ex);
+        }
+    }
+
+    async Task ShowAddedToastAsync(string formationName)
+    {
+        _toastCts?.Cancel();
+        _toastCts?.Dispose();
+        _toastCts = new CancellationTokenSource();
+        var token = _toastCts.Token;
+
+        AddedToastLabel.Text = $"{formationName} added";
+        AddedToast.CancelAnimations();
+        AddedToast.Opacity = 1;
+        AddedToast.IsVisible = true;
+
+        try
+        {
+            await Task.Delay(1000, token);
+            await AddedToast.FadeTo(0, 120);
+            if (!token.IsCancellationRequested)
+                AddedToast.IsVisible = false;
+        }
+        catch (TaskCanceledException)
+        {
         }
     }
 

@@ -21,22 +21,32 @@ public static class RuleLinkifier
             return markdown;
 
         var (protectedText, tokens) = Protect(markdown);
-        var byName = new Dictionary<string, RuleListItem>(StringComparer.OrdinalIgnoreCase);
-        foreach (var rule in candidates)
-            byName.TryAdd(rule.Name, rule);
+        var groups = candidates
+            .Select((rule, index) => (
+                Name: $"r{index}",
+                Pattern: ParameterizedName.IsTemplate(rule.Name)
+                    ? ParameterizedName.ToMatchRegex(rule.Name)
+                    : Regex.Escape(rule.Name),
+                Rule: rule))
+            .ToList();
 
-        var alternation = string.Join("|", candidates.Select(rule => Regex.Escape(rule.Name)));
+        var alternation = string.Join("|", groups.Select(group => $"(?<{group.Name}>{group.Pattern})"));
         var regex = new Regex(
             $@"(?<![A-Za-z0-9])(?:{alternation})(?![A-Za-z0-9])",
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
         var linked = regex.Replace(protectedText, match =>
         {
-            if (!byName.TryGetValue(match.Value, out var rule))
-                return match.Value;
+            foreach (var group in groups)
+            {
+                if (!match.Groups[group.Name].Success)
+                    continue;
 
-            var url = $"https://{LinkHost}/rule?id={rule.Id}&kind={Uri.EscapeDataString(rule.Kind)}";
-            return $"[{match.Value}]({url})";
+                var url = $"https://{LinkHost}/rule?id={group.Rule.Id}&kind={Uri.EscapeDataString(group.Rule.Kind)}";
+                return $"[{match.Value}]({url})";
+            }
+
+            return match.Value;
         });
 
         return Restore(linked, tokens);

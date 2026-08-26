@@ -1,0 +1,14 @@
+---
+description: Pages with a single search line autofocus that field on open
+alwaysApply: true
+---
+
+# Search field focus
+
+When a page’s primary interaction is a **single search or filter line** (Rules, Add Formation, Add Weapon, and similar pickers), that entry must be focused and ready for typing as soon as the page appears.
+
+- Call focus after load finishes (e.g. end of `OnAppearing` / `LoadAsync`).
+- Select any existing text so the next keystroke replaces the query.
+- Prefer `SearchFieldFocus.FocusAndSelect(entry)` so behavior stays consistent.
+- After add-and-stay actions on picker pages, refocus and reselect the search line the same way.
+- Do **not** steal focus on multi-field forms (login, create army, edit dialogs) unless the product clearly has one primary field and no competing inputs.

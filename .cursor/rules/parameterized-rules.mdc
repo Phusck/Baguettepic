@@ -1,0 +1,23 @@
+---
+description: Catalog rules use X/Y in parentheses; concrete values belong on units
+alwaysApply: true
+---
+
+# Parameterized rule names
+
+General catalog entries (`SpecialAbility`, `Rule`, `SpecialRule`) that take a numeric, dice, or distance value in parentheses must use **X** (and **Y** for a second value). Never put a concrete value on the catalog row or in its description.
+
+```
+✅ Elite (X)          ❌ Elite (2)
+✅ Synapse (X)        ❌ Synapse (15 cm)
+✅ Confusion (-X)     ❌ Confusion (-2)
+✅ Dodge (X+)         ❌ Dodge (5+)
+✅ Damage (+X) in Assault
+✅ Damages Buildings (AP -X / Y)
+```
+
+Named variants that are different rules keep their words: `Slave (Hunt)`, `Forward Observer (FO)`.
+
+Units and weapons store the concrete value in `AbilityValue` on the junction table. The profile shows `Elite (+2)` or `Synapse (15 cm)`; tapping it opens the catalog `Elite (X)` / `Synapse (X)` rule.
+
+`RuleLinkifier` must treat `Name (X)` and `Name (+2)` as the same rule.
