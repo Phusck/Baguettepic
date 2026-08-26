@@ -95,6 +95,14 @@
                                 AlignItems="Start" />
                 </VerticalStackLayout>
 
+                <VerticalStackLayout x:Name="PsychicPowersHost" Spacing="8" IsVisible="False">
+                    <Label Text="Psychic powers" FontSize="16" />
+                    <FlexLayout x:Name="PsychicPowersLayout"
+                                Wrap="Wrap"
+                                JustifyContent="Start"
+                                AlignItems="Start" />
+                </VerticalStackLayout>
+
                 <VerticalStackLayout x:Name="WeaponsHost" Spacing="16" />
 
                 <Label x:Name="ErrorLabel"

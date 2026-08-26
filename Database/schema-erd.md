@@ -24,6 +24,8 @@ erDiagram
     SpecialAbility ||--o{ BaseSpecialAbility : appliedTo
     SpecialAbility ||--o{ WeaponSpecialAbility : appliedTo
     Weapon ||--o{ WeaponSpecialAbility : has
+    Base ||--o{ BasePsychicPower : has
+    PsychicPower ||--o{ BasePsychicPower : appliedTo
     Army ||--o{ ArmyFormation : includes
     Formation ||--o{ ArmyFormation : selectedIn
     Codex ||--o{ TitanWeapon : catalogs
@@ -110,6 +112,18 @@ erDiagram
         int SpecialAbilityId PK_FK
     }
 
+    PsychicPower {
+        int PsychicPowerId PK
+        varchar PsychicPowerName UK
+        text Description
+    }
+
+    BasePsychicPower {
+        int BaseId PK_FK
+        int PsychicPowerId PK_FK
+        varchar AbilityValue
+    }
+
     SpecialRule {
         int SpecialRuleId PK
         int CodexId FK
@@ -172,6 +186,8 @@ erDiagram
 | `SpecialAbility` | Shared ability definitions |
 | `BaseSpecialAbility` | Many-to-many: bases ↔ abilities |
 | `WeaponSpecialAbility` | Many-to-many: weapons ↔ abilities |
+| `PsychicPower` | Shared psychic power definitions |
+| `BasePsychicPower` | Many-to-many: bases ↔ psychic powers |
 | `SpecialRule` | Codex-scoped special rules |
 | `Rule` | Standalone rules (no FK relationships yet) |
 | `AppUser` | App login account. Owns army lists. |
@@ -185,4 +201,5 @@ erDiagram
 - An **AppUser** owns many **Armies**. An **Army** buys **Formations**. A **Formation** holds one or more **Detachments**. A **Detachment** holds one or more **Bases**.
 - **TitanWeapon** is a shared catalog. Chosen weapons for a titan are stored on that army list’s `ArmyFormation.TitanWeapons` JSON.
 - **SpecialAbility** is reused by both bases and weapons through junction tables.
+- **PsychicPower** is linked only to bases through `BasePsychicPower` (shown on unit detail).
 - **Rule** is present in the schema but currently unlinked to other tables.

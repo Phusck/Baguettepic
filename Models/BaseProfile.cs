@@ -12,12 +12,14 @@ public sealed class BaseProfile
     public required int Class { get; init; }
     public required int DestructionPoints { get; init; }
     public required IReadOnlyList<AbilityLink> Abilities { get; init; }
+    public required IReadOnlyList<AbilityLink> PsychicPowers { get; init; }
     public required IReadOnlyList<WeaponProfile> Weapons { get; init; }
     public IReadOnlyList<WeaponProfile> ChosenTitanWeapons { get; init; } = [];
 
     public string? DetachmentName { get; init; }
     public bool HasImage => ImageBytes is { Length: > 0 };
     public bool HasAbilities => Abilities.Count > 0;
+    public bool HasPsychicPowers => PsychicPowers.Count > 0;
     public bool HasWeapons => Weapons.Count > 0;
     public string MoveText => FormatMove(Movement);
     public string AfText => string.IsNullOrWhiteSpace(FA) ? "--" : FA;

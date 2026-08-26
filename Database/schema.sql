@@ -15,6 +15,7 @@ DROP TABLE IF EXISTS FormationDetachment;
 DROP TABLE IF EXISTS DetachmentComposition;
 DROP TABLE IF EXISTS WeaponSpecialAbility;
 DROP TABLE IF EXISTS BaseSpecialAbility;
+DROP TABLE IF EXISTS BasePsychicPower;
 DROP TABLE IF EXISTS Weapon;
 DROP TABLE IF EXISTS SpecialRule;
 DROP TABLE IF EXISTS Army;
@@ -24,6 +25,7 @@ DROP TABLE IF EXISTS Detachment;
 DROP TABLE IF EXISTS `Base`;
 DROP TABLE IF EXISTS TitanWeapon;
 DROP TABLE IF EXISTS SpecialAbility;
+DROP TABLE IF EXISTS PsychicPower;
 DROP TABLE IF EXISTS Rule;
 DROP TABLE IF EXISTS FormationKind;
 DROP TABLE IF EXISTS Codex;
@@ -186,6 +188,28 @@ CREATE TABLE WeaponSpecialAbility (
         ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT FK_WSA_Ability
         FOREIGN KEY (SpecialAbilityId) REFERENCES SpecialAbility (SpecialAbilityId)
+        ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE PsychicPower (
+    PsychicPowerId INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    PsychicPowerName VARCHAR(128) NOT NULL,
+    Description TEXT NOT NULL,
+    PRIMARY KEY (PsychicPowerId),
+    UNIQUE KEY UQ_PsychicPower_Name (PsychicPowerName)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE BasePsychicPower (
+    BaseId INT UNSIGNED NOT NULL,
+    PsychicPowerId INT UNSIGNED NOT NULL,
+    AbilityValue VARCHAR(64) NOT NULL DEFAULT '',
+    PRIMARY KEY (BaseId, PsychicPowerId),
+    KEY IX_BPP_Power (PsychicPowerId),
+    CONSTRAINT FK_BPP_Base
+        FOREIGN KEY (BaseId) REFERENCES `Base` (BaseId)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT FK_BPP_Power
+        FOREIGN KEY (PsychicPowerId) REFERENCES PsychicPower (PsychicPowerId)
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

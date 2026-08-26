@@ -461,6 +461,13 @@ ABILITIES: list[tuple[str, str]] = [
         " • First Strike (1/2+/AP -4) and Damage (+1).",
     ),
     (
+        "Synaptic Beacon",
+        "[Movement Phase, upon activation]: The Dominatrix extends the range of its Synapse radius to 60 cm for the remainder of the turn. In addition, during the End-of-Turn Effects, detachments acting on Instinct within 60 cm may attempt a Hive Mind Test. If successful, remove their Instinct counters.",
+    ),
+]
+
+PSYCHIC_POWERS: list[tuple[str, str]] = [
+    (
         "Bio-Resistance",
         "[Movement Phase, upon activation]: The Norn Queen improves its Regeneration by 1 and gains Dodge (5+) for the remainder of the turn.",
     ),
@@ -481,10 +488,6 @@ ABILITIES: list[tuple[str, str]] = [
         "[Combat Phase, Shooting]: The Dominatrix focuses its psychic energy to destroy the enemy. Choose one of the two firing modes when it is activated.\n\n"
         "Energy Torrent -- Focused: 90 cm, 1 die, 3+, AP -4, 1D3 Hits.\n\n"
         "Energy Torrent -- Diffuse: 90 cm, Template, 3+, AP -1, Template (7.5 cm), Reduces Cover (-1).",
-    ),
-    (
-        "Synaptic Beacon",
-        "[Movement Phase, upon activation]: The Dominatrix extends the range of its Synapse radius to 60 cm for the remainder of the turn. In addition, during the End-of-Turn Effects, detachments acting on Instinct within 60 cm may attempt a Hive Mind Test. If successful, remove their Instinct counters.",
     ),
 ]
 
@@ -1161,6 +1164,8 @@ BASES = [
             ("Synaptic Overload", ""),
             ("Damage (+X) in Assault", "1"),
             ("Forward Observer (FO)", ""),
+        ],
+        psychic_powers=[
             ("Bio-Resistance", ""),
             ("Psychic Scream", ""),
             ("Psychic Projectile", ""),
@@ -1185,9 +1190,11 @@ BASES = [
             ("Psyker", ""),
             ("Synaptic Overload", ""),
             ("Forward Observer (FO)", ""),
+            ("Synaptic Beacon", ""),
+        ],
+        psychic_powers=[
             ("Warp Field", ""),
             ("Energy Torrent", ""),
-            ("Synaptic Beacon", ""),
         ],
         weapons=[
             w("Bio-Plasma Cannons", "75 cm", "4", "4+", "-3", [("Turret", "")]),
@@ -1528,6 +1535,10 @@ def emit_tyranids_sql() -> str:
         "INNER JOIN `Base` b ON b.BaseId = bsa.BaseId",
         "WHERE b.CodexId = @codexId;",
         "",
+        "DELETE bpp FROM BasePsychicPower bpp",
+        "INNER JOIN `Base` b ON b.BaseId = bpp.BaseId",
+        "WHERE b.CodexId = @codexId;",
+        "",
         "DELETE fd FROM FormationDetachment fd",
         "INNER JOIN Formation f ON f.FormationId = fd.FormationId",
         "WHERE f.CodexId = @codexId;",
@@ -1558,6 +1569,20 @@ def emit_tyranids_sql() -> str:
         union_rows(ABILITIES),
         ") AS src ON src.n = sa.SpecialAbilityName",
         "SET sa.Description = src.d;",
+        "",
+        "INSERT INTO PsychicPower (PsychicPowerName, Description)",
+        "SELECT n, d FROM (",
+        union_rows(PSYCHIC_POWERS),
+        ") AS src",
+        "WHERE NOT EXISTS (",
+        "    SELECT 1 FROM PsychicPower pp WHERE pp.PsychicPowerName = src.n",
+        ");",
+        "",
+        "UPDATE PsychicPower pp",
+        "INNER JOIN (",
+        union_rows(PSYCHIC_POWERS),
+        ") AS src ON src.n = pp.PsychicPowerName",
+        "SET pp.Description = src.d;",
         "",
         "INSERT INTO SpecialRule (CodexId, SpecialRuleName, Description)",
         "SELECT @codexId, n, d FROM (",
@@ -1621,6 +1646,27 @@ def emit_tyranids_sql() -> str:
     lines.append(") AS b")
     lines.append("INNER JOIN SpecialAbility sa ON sa.SpecialAbilityName = b.AbilityName;")
     lines.append("")
+
+    power_rows = []
+    for b in BASES:
+        bid = var_name(b["name"])
+        for pname, pval in b.get("psychic_powers", []):
+            power_rows.append((bid, pname, pval))
+    if power_rows:
+        lines.append("INSERT INTO BasePsychicPower (BaseId, PsychicPowerId, AbilityValue)")
+        lines.append("SELECT b.BaseId, pp.PsychicPowerId, b.AbilityValue")
+        lines.append("FROM (")
+        union = []
+        for i, (bid, pname, pval) in enumerate(power_rows):
+            prefix = "    SELECT" if i == 0 else "    UNION ALL SELECT"
+            union.append(
+                f"{prefix} {bid} AS BaseId, '{sql_str(pname)}' AS PowerName, "
+                f"'{sql_str(pval)}' AS AbilityValue"
+            )
+        lines.append("\n".join(union))
+        lines.append(") AS b")
+        lines.append("INNER JOIN PsychicPower pp ON pp.PsychicPowerName = b.PowerName;")
+        lines.append("")
 
     wsa_rows = []
     for b in BASES:

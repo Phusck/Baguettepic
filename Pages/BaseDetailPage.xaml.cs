@@ -103,6 +103,9 @@ public partial class BaseDetailPage : ContentPage
             BindAbilities(AbilitiesLayout, profile.Abilities);
             AbilitiesHost.IsVisible = profile.HasAbilities;
 
+            BindAbilities(PsychicPowersLayout, profile.PsychicPowers);
+            PsychicPowersHost.IsVisible = profile.HasPsychicPowers;
+
             WeaponsHost.Children.Clear();
             foreach (var weapon in profile.Weapons)
                 WeaponsHost.Children.Add(CreateWeaponView(weapon));

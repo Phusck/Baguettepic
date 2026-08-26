@@ -67,6 +67,10 @@ DELETE bsa FROM BaseSpecialAbility bsa
 INNER JOIN `Base` b ON b.BaseId = bsa.BaseId
 WHERE b.CodexId = @codexId;
 
+DELETE bpp FROM BasePsychicPower bpp
+INNER JOIN `Base` b ON b.BaseId = bpp.BaseId
+WHERE b.CodexId = @codexId;
+
 DELETE fd FROM FormationDetachment fd
 INNER JOIN Formation f ON f.FormationId = fd.FormationId
 WHERE f.CodexId = @codexId;
@@ -422,15 +426,6 @@ If two opposing bases both possess such weapons, the abilities cancel one anothe
  • Shooting: Damage (+1).
  • Entangle and Damage (+1) in Assault.
  • First Strike (1/2+/AP -4) and Damage (+1).' AS d
-    UNION ALL SELECT 'Bio-Resistance' AS n, '[Movement Phase, upon activation]: The Norn Queen improves its Regeneration by 1 and gains Dodge (5+) for the remainder of the turn.' AS d
-    UNION ALL SELECT 'Psychic Scream' AS n, '[Movement Phase, upon activation]: The Norn Queen gains the Dread (-1) and Psychic Abomination abilities for the remainder of the turn.' AS d
-    UNION ALL SELECT 'Psychic Projectile' AS n, '[Combat Phase, Shooting]: Choose a target within 45 cm and in the Norn Queen''s Line of Sight. The target is hit on a 4+. This is a Psychic Power.' AS d
-    UNION ALL SELECT 'Warp Field' AS n, '[Movement Phase, upon activation]: The Dominatrix gains Protection (4+) for the remainder of the turn.' AS d
-    UNION ALL SELECT 'Energy Torrent' AS n, '[Combat Phase, Shooting]: The Dominatrix focuses its psychic energy to destroy the enemy. Choose one of the two firing modes when it is activated.
-
-Energy Torrent -- Focused: 90 cm, 1 die, 3+, AP -4, 1D3 Hits.
-
-Energy Torrent -- Diffuse: 90 cm, Template, 3+, AP -1, Template (7.5 cm), Reduces Cover (-1).' AS d
     UNION ALL SELECT 'Synaptic Beacon' AS n, '[Movement Phase, upon activation]: The Dominatrix extends the range of its Synapse radius to 60 cm for the remainder of the turn. In addition, during the End-of-Turn Effects, detachments acting on Instinct within 60 cm may attempt a Hive Mind Test. If successful, remove their Instinct counters.' AS d
 ) AS src
 WHERE NOT EXISTS (
@@ -775,7 +770,13 @@ If two opposing bases both possess such weapons, the abilities cancel one anothe
  • Shooting: Damage (+1).
  • Entangle and Damage (+1) in Assault.
  • First Strike (1/2+/AP -4) and Damage (+1).' AS d
-    UNION ALL SELECT 'Bio-Resistance' AS n, '[Movement Phase, upon activation]: The Norn Queen improves its Regeneration by 1 and gains Dodge (5+) for the remainder of the turn.' AS d
+    UNION ALL SELECT 'Synaptic Beacon' AS n, '[Movement Phase, upon activation]: The Dominatrix extends the range of its Synapse radius to 60 cm for the remainder of the turn. In addition, during the End-of-Turn Effects, detachments acting on Instinct within 60 cm may attempt a Hive Mind Test. If successful, remove their Instinct counters.' AS d
+) AS src ON src.n = sa.SpecialAbilityName
+SET sa.Description = src.d;
+
+INSERT INTO PsychicPower (PsychicPowerName, Description)
+SELECT n, d FROM (
+    SELECT 'Bio-Resistance' AS n, '[Movement Phase, upon activation]: The Norn Queen improves its Regeneration by 1 and gains Dodge (5+) for the remainder of the turn.' AS d
     UNION ALL SELECT 'Psychic Scream' AS n, '[Movement Phase, upon activation]: The Norn Queen gains the Dread (-1) and Psychic Abomination abilities for the remainder of the turn.' AS d
     UNION ALL SELECT 'Psychic Projectile' AS n, '[Combat Phase, Shooting]: Choose a target within 45 cm and in the Norn Queen''s Line of Sight. The target is hit on a 4+. This is a Psychic Power.' AS d
     UNION ALL SELECT 'Warp Field' AS n, '[Movement Phase, upon activation]: The Dominatrix gains Protection (4+) for the remainder of the turn.' AS d
@@ -784,9 +785,24 @@ If two opposing bases both possess such weapons, the abilities cancel one anothe
 Energy Torrent -- Focused: 90 cm, 1 die, 3+, AP -4, 1D3 Hits.
 
 Energy Torrent -- Diffuse: 90 cm, Template, 3+, AP -1, Template (7.5 cm), Reduces Cover (-1).' AS d
-    UNION ALL SELECT 'Synaptic Beacon' AS n, '[Movement Phase, upon activation]: The Dominatrix extends the range of its Synapse radius to 60 cm for the remainder of the turn. In addition, during the End-of-Turn Effects, detachments acting on Instinct within 60 cm may attempt a Hive Mind Test. If successful, remove their Instinct counters.' AS d
-) AS src ON src.n = sa.SpecialAbilityName
-SET sa.Description = src.d;
+) AS src
+WHERE NOT EXISTS (
+    SELECT 1 FROM PsychicPower pp WHERE pp.PsychicPowerName = src.n
+);
+
+UPDATE PsychicPower pp
+INNER JOIN (
+    SELECT 'Bio-Resistance' AS n, '[Movement Phase, upon activation]: The Norn Queen improves its Regeneration by 1 and gains Dodge (5+) for the remainder of the turn.' AS d
+    UNION ALL SELECT 'Psychic Scream' AS n, '[Movement Phase, upon activation]: The Norn Queen gains the Dread (-1) and Psychic Abomination abilities for the remainder of the turn.' AS d
+    UNION ALL SELECT 'Psychic Projectile' AS n, '[Combat Phase, Shooting]: Choose a target within 45 cm and in the Norn Queen''s Line of Sight. The target is hit on a 4+. This is a Psychic Power.' AS d
+    UNION ALL SELECT 'Warp Field' AS n, '[Movement Phase, upon activation]: The Dominatrix gains Protection (4+) for the remainder of the turn.' AS d
+    UNION ALL SELECT 'Energy Torrent' AS n, '[Combat Phase, Shooting]: The Dominatrix focuses its psychic energy to destroy the enemy. Choose one of the two firing modes when it is activated.
+
+Energy Torrent -- Focused: 90 cm, 1 die, 3+, AP -4, 1D3 Hits.
+
+Energy Torrent -- Diffuse: 90 cm, Template, 3+, AP -1, Template (7.5 cm), Reduces Cover (-1).' AS d
+) AS src ON src.n = pp.PsychicPowerName
+SET pp.Description = src.d;
 
 INSERT INTO SpecialRule (CodexId, SpecialRuleName, Description)
 SELECT @codexId, n, d FROM (
@@ -1166,9 +1182,6 @@ FROM (
     UNION ALL SELECT @nornQueen AS BaseId, 'Synaptic Overload' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @nornQueen AS BaseId, 'Damage (+X) in Assault' AS AbilityName, '1' AS AbilityValue
     UNION ALL SELECT @nornQueen AS BaseId, 'Forward Observer (FO)' AS AbilityName, '' AS AbilityValue
-    UNION ALL SELECT @nornQueen AS BaseId, 'Bio-Resistance' AS AbilityName, '' AS AbilityValue
-    UNION ALL SELECT @nornQueen AS BaseId, 'Psychic Scream' AS AbilityName, '' AS AbilityValue
-    UNION ALL SELECT @nornQueen AS BaseId, 'Psychic Projectile' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @dominatrix AS BaseId, 'Character' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @dominatrix AS BaseId, 'Close Defences (X+)' AS AbilityName, '6' AS AbilityValue
     UNION ALL SELECT @dominatrix AS BaseId, 'Wounds (X)' AS AbilityName, '5' AS AbilityValue
@@ -1179,8 +1192,6 @@ FROM (
     UNION ALL SELECT @dominatrix AS BaseId, 'Psyker' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @dominatrix AS BaseId, 'Synaptic Overload' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @dominatrix AS BaseId, 'Forward Observer (FO)' AS AbilityName, '' AS AbilityValue
-    UNION ALL SELECT @dominatrix AS BaseId, 'Warp Field' AS AbilityName, '' AS AbilityValue
-    UNION ALL SELECT @dominatrix AS BaseId, 'Energy Torrent' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @dominatrix AS BaseId, 'Synaptic Beacon' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @harridan AS BaseId, 'Floater' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @harridan AS BaseId, 'Regeneration (X+)' AS AbilityName, '5' AS AbilityValue
@@ -1227,6 +1238,17 @@ FROM (
     UNION ALL SELECT @sporeMineShot AS BaseId, 'Off-Table Artillery' AS AbilityName, '' AS AbilityValue
 ) AS b
 INNER JOIN SpecialAbility sa ON sa.SpecialAbilityName = b.AbilityName;
+
+INSERT INTO BasePsychicPower (BaseId, PsychicPowerId, AbilityValue)
+SELECT b.BaseId, pp.PsychicPowerId, b.AbilityValue
+FROM (
+    SELECT @nornQueen AS BaseId, 'Bio-Resistance' AS PowerName, '' AS AbilityValue
+    UNION ALL SELECT @nornQueen AS BaseId, 'Psychic Scream' AS PowerName, '' AS AbilityValue
+    UNION ALL SELECT @nornQueen AS BaseId, 'Psychic Projectile' AS PowerName, '' AS AbilityValue
+    UNION ALL SELECT @dominatrix AS BaseId, 'Warp Field' AS PowerName, '' AS AbilityValue
+    UNION ALL SELECT @dominatrix AS BaseId, 'Energy Torrent' AS PowerName, '' AS AbilityValue
+) AS b
+INNER JOIN PsychicPower pp ON pp.PsychicPowerName = b.PowerName;
 
 INSERT INTO WeaponSpecialAbility (WeaponId, SpecialAbilityId, AbilityValue)
 SELECT w.WeaponId, sa.SpecialAbilityId, src.AbilityValue

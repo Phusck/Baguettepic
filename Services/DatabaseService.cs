@@ -36,6 +36,9 @@ public sealed class DatabaseService
                     SELECT SpecialAbilityId AS Id, SpecialAbilityName AS Name, Description, 'Ability' AS Kind
                     FROM SpecialAbility
                     UNION ALL
+                    SELECT PsychicPowerId, PsychicPowerName, Description, 'Psychic Power'
+                    FROM PsychicPower
+                    UNION ALL
                     SELECT RuleId, RuleName, Description, 'Rule'
                     FROM Rule
                     UNION ALL
@@ -98,6 +101,9 @@ public sealed class DatabaseService
             SELECT Id, Name, Kind FROM (
                 SELECT SpecialAbilityId AS Id, SpecialAbilityName AS Name, 'Ability' AS Kind
                 FROM SpecialAbility
+                UNION ALL
+                SELECT PsychicPowerId, PsychicPowerName, 'Psychic Power'
+                FROM PsychicPower
                 UNION ALL
                 SELECT RuleId, RuleName, 'Rule'
                 FROM Rule
@@ -571,6 +577,31 @@ public sealed class DatabaseService
             }
         }
 
+        var psychicPowers = new List<AbilityLink>();
+        await using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = """
+                SELECT pp.PsychicPowerId, pp.PsychicPowerName, bpp.AbilityValue
+                FROM BasePsychicPower bpp
+                JOIN PsychicPower pp ON pp.PsychicPowerId = bpp.PsychicPowerId
+                WHERE bpp.BaseId = @id
+                ORDER BY pp.PsychicPowerName
+                """;
+            cmd.Parameters.AddWithValue("@id", baseId);
+            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                psychicPowers.Add(new AbilityLink
+                {
+                    Id = reader.GetInt32("PsychicPowerId"),
+                    Name = ParameterizedName.Format(
+                        reader.GetString("PsychicPowerName"),
+                        reader.GetString("AbilityValue")),
+                    Kind = "Psychic Power"
+                });
+            }
+        }
+
         var allWeapons = await LoadWeaponsForBaseAsync(conn, baseId, cancellationToken);
         var builtIn = allWeapons.Where(w => !w.IsTitanWeapon).ToList();
         var chosen = new List<WeaponProfile>();
@@ -596,6 +627,7 @@ public sealed class DatabaseService
             Class = @class,
             DestructionPoints = destructionPoints,
             Abilities = abilities,
+            PsychicPowers = psychicPowers,
             Weapons = builtIn,
             ChosenTitanWeapons = chosen,
             DetachmentName = string.IsNullOrWhiteSpace(detachmentName) ? null : detachmentName
@@ -1325,6 +1357,7 @@ public sealed class DatabaseService
     static (string Table, string IdColumn, string NameColumn) TableForKind(string kind) => kind switch
     {
         "Ability" => ("SpecialAbility", "SpecialAbilityId", "SpecialAbilityName"),
+        "Psychic Power" => ("PsychicPower", "PsychicPowerId", "PsychicPowerName"),
         "Special Rule" => ("SpecialRule", "SpecialRuleId", "SpecialRuleName"),
         _ => ("Rule", "RuleId", "RuleName")
     };
