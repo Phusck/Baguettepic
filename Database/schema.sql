@@ -1,4 +1,6 @@
--- Baguettepic schema from Palladium Epic class-diagram.md
+-- Baguettepic schema from
+-- https://github.com/Phusck/NetEpicFR300-EnglishTranslation
+-- Rulebook 303/class-diagram.md (branch Development)
 -- Database: baguettepic
 --
 -- Hierarchy: Army buys Formations. A Formation holds Detachments.
