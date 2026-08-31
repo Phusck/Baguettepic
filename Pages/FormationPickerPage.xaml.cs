@@ -128,7 +128,7 @@ public partial class FormationPickerPage : ContentPage
     {
         try
         {
-            var army = await DatabaseService.Instance.GetArmyAsync(_armyId);
+            var army = await ArmyCacheService.Instance.GetArmyAsync(_armyId);
             var current = army?.Entries.FirstOrDefault(x => x.FormationId == formation.Id);
             var quantity = (current?.Quantity ?? 0) + 1;
             await DatabaseService.Instance.SetArmyFormationQuantityAsync(_armyId, formation.Id, quantity);

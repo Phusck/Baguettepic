@@ -34,6 +34,19 @@ PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 DROP TABLE IF EXISTS ArmyFormationWeapon;
 
+SET @hasUsesCp := (
+    SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'Codex'
+      AND COLUMN_NAME = 'UsesCommandPoints'
+);
+SET @sql := IF(
+    @hasUsesCp = 0,
+    'ALTER TABLE Codex ADD COLUMN UsesCommandPoints TINYINT(1) NOT NULL DEFAULT 0 AFTER CodexName',
+    'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
 ALTER TABLE `Base`
     MODIFY Morale VARCHAR(16) NOT NULL,
     MODIFY Movement VARCHAR(16) NOT NULL,
@@ -55,6 +68,7 @@ SELECT 'Tyranids'
 WHERE NOT EXISTS (SELECT 1 FROM Codex WHERE CodexName = 'Tyranids');
 
 SET @codexId := (SELECT CodexId FROM Codex WHERE CodexName = 'Tyranids');
+UPDATE Codex SET UsesCommandPoints = 1 WHERE CodexId = @codexId;
 
 DELETE FROM TitanWeapon WHERE CodexId = @codexId;
 
@@ -426,7 +440,6 @@ If two opposing bases both possess such weapons, the abilities cancel one anothe
  • Shooting: Damage (+1).
  • Entangle and Damage (+1) in Assault.
  • First Strike (1/2+/AP -4) and Damage (+1).' AS d
-    UNION ALL SELECT 'Synaptic Beacon' AS n, '[Movement Phase, upon activation]: The Dominatrix extends the range of its Synapse radius to 60 cm for the remainder of the turn. In addition, during the End-of-Turn Effects, detachments acting on Instinct within 60 cm may attempt a Hive Mind Test. If successful, remove their Instinct counters.' AS d
 ) AS src
 WHERE NOT EXISTS (
     SELECT 1 FROM SpecialAbility sa WHERE sa.SpecialAbilityName = src.n
@@ -770,7 +783,6 @@ If two opposing bases both possess such weapons, the abilities cancel one anothe
  • Shooting: Damage (+1).
  • Entangle and Damage (+1) in Assault.
  • First Strike (1/2+/AP -4) and Damage (+1).' AS d
-    UNION ALL SELECT 'Synaptic Beacon' AS n, '[Movement Phase, upon activation]: The Dominatrix extends the range of its Synapse radius to 60 cm for the remainder of the turn. In addition, during the End-of-Turn Effects, detachments acting on Instinct within 60 cm may attempt a Hive Mind Test. If successful, remove their Instinct counters.' AS d
 ) AS src ON src.n = sa.SpecialAbilityName
 SET sa.Description = src.d;
 
@@ -785,6 +797,7 @@ SELECT n, d FROM (
 Energy Torrent -- Focused: 90 cm, 1 die, 3+, AP -4, 1D3 Hits.
 
 Energy Torrent -- Diffuse: 90 cm, Template, 3+, AP -1, Template (7.5 cm), Reduces Cover (-1).' AS d
+    UNION ALL SELECT 'Synaptic Beacon' AS n, '[Movement Phase, upon activation]: The Dominatrix extends the range of its Synapse radius to 60 cm for the remainder of the turn. In addition, during the End-of-Turn Effects, detachments acting on Instinct within 60 cm may attempt a Hive Mind Test. If successful, remove their Instinct counters.' AS d
 ) AS src
 WHERE NOT EXISTS (
     SELECT 1 FROM PsychicPower pp WHERE pp.PsychicPowerName = src.n
@@ -801,6 +814,7 @@ INNER JOIN (
 Energy Torrent -- Focused: 90 cm, 1 die, 3+, AP -4, 1D3 Hits.
 
 Energy Torrent -- Diffuse: 90 cm, Template, 3+, AP -1, Template (7.5 cm), Reduces Cover (-1).' AS d
+    UNION ALL SELECT 'Synaptic Beacon' AS n, '[Movement Phase, upon activation]: The Dominatrix extends the range of its Synapse radius to 60 cm for the remainder of the turn. In addition, during the End-of-Turn Effects, detachments acting on Instinct within 60 cm may attempt a Hive Mind Test. If successful, remove their Instinct counters.' AS d
 ) AS src ON src.n = pp.PsychicPowerName
 SET pp.Description = src.d;
 
@@ -1192,7 +1206,6 @@ FROM (
     UNION ALL SELECT @dominatrix AS BaseId, 'Psyker' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @dominatrix AS BaseId, 'Synaptic Overload' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @dominatrix AS BaseId, 'Forward Observer (FO)' AS AbilityName, '' AS AbilityValue
-    UNION ALL SELECT @dominatrix AS BaseId, 'Synaptic Beacon' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @harridan AS BaseId, 'Floater' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @harridan AS BaseId, 'Regeneration (X+)' AS AbilityName, '5' AS AbilityValue
     UNION ALL SELECT @harridan AS BaseId, 'Synapse (X)' AS AbilityName, '20 cm' AS AbilityValue
@@ -1247,6 +1260,7 @@ FROM (
     UNION ALL SELECT @nornQueen AS BaseId, 'Psychic Projectile' AS PowerName, '' AS AbilityValue
     UNION ALL SELECT @dominatrix AS BaseId, 'Warp Field' AS PowerName, '' AS AbilityValue
     UNION ALL SELECT @dominatrix AS BaseId, 'Energy Torrent' AS PowerName, '' AS AbilityValue
+    UNION ALL SELECT @dominatrix AS BaseId, 'Synaptic Beacon' AS PowerName, '' AS AbilityValue
 ) AS b
 INNER JOIN PsychicPower pp ON pp.PsychicPowerName = b.PowerName;
 

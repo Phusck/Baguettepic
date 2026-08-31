@@ -460,10 +460,6 @@ ABILITIES: list[tuple[str, str]] = [
         " • Entangle and Damage (+1) in Assault.\n"
         " • First Strike (1/2+/AP -4) and Damage (+1).",
     ),
-    (
-        "Synaptic Beacon",
-        "[Movement Phase, upon activation]: The Dominatrix extends the range of its Synapse radius to 60 cm for the remainder of the turn. In addition, during the End-of-Turn Effects, detachments acting on Instinct within 60 cm may attempt a Hive Mind Test. If successful, remove their Instinct counters.",
-    ),
 ]
 
 PSYCHIC_POWERS: list[tuple[str, str]] = [
@@ -488,6 +484,10 @@ PSYCHIC_POWERS: list[tuple[str, str]] = [
         "[Combat Phase, Shooting]: The Dominatrix focuses its psychic energy to destroy the enemy. Choose one of the two firing modes when it is activated.\n\n"
         "Energy Torrent -- Focused: 90 cm, 1 die, 3+, AP -4, 1D3 Hits.\n\n"
         "Energy Torrent -- Diffuse: 90 cm, Template, 3+, AP -1, Template (7.5 cm), Reduces Cover (-1).",
+    ),
+    (
+        "Synaptic Beacon",
+        "[Movement Phase, upon activation]: The Dominatrix extends the range of its Synapse radius to 60 cm for the remainder of the turn. In addition, during the End-of-Turn Effects, detachments acting on Instinct within 60 cm may attempt a Hive Mind Test. If successful, remove their Instinct counters.",
     ),
 ]
 
@@ -1190,11 +1190,11 @@ BASES = [
             ("Psyker", ""),
             ("Synaptic Overload", ""),
             ("Forward Observer (FO)", ""),
-            ("Synaptic Beacon", ""),
         ],
         psychic_powers=[
             ("Warp Field", ""),
             ("Energy Torrent", ""),
+            ("Synaptic Beacon", ""),
         ],
         weapons=[
             w("Bio-Plasma Cannons", "75 cm", "4", "4+", "-3", [("Turret", "")]),
@@ -1502,6 +1502,19 @@ def emit_tyranids_sql() -> str:
         "",
         "DROP TABLE IF EXISTS ArmyFormationWeapon;",
         "",
+        "SET @hasUsesCp := (",
+        "    SELECT COUNT(*) FROM information_schema.COLUMNS",
+        "    WHERE TABLE_SCHEMA = DATABASE()",
+        "      AND TABLE_NAME = 'Codex'",
+        "      AND COLUMN_NAME = 'UsesCommandPoints'",
+        ");",
+        "SET @sql := IF(",
+        "    @hasUsesCp = 0,",
+        "    'ALTER TABLE Codex ADD COLUMN UsesCommandPoints TINYINT(1) NOT NULL DEFAULT 0 AFTER CodexName',",
+        "    'SELECT 1'",
+        ");",
+        "PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;",
+        "",
         "ALTER TABLE `Base`",
         "    MODIFY Morale VARCHAR(16) NOT NULL,",
         "    MODIFY Movement VARCHAR(16) NOT NULL,",
@@ -1523,6 +1536,7 @@ def emit_tyranids_sql() -> str:
         "WHERE NOT EXISTS (SELECT 1 FROM Codex WHERE CodexName = 'Tyranids');",
         "",
         "SET @codexId := (SELECT CodexId FROM Codex WHERE CodexName = 'Tyranids');",
+        "UPDATE Codex SET UsesCommandPoints = 1 WHERE CodexId = @codexId;",
         "",
         "DELETE FROM TitanWeapon WHERE CodexId = @codexId;",
         "",

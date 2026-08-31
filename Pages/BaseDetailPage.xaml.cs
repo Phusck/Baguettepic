@@ -65,8 +65,14 @@ public partial class BaseDetailPage : ContentPage
         try
         {
             SetBusy(true);
-            var profile = await DatabaseService.Instance.GetBaseProfileAsync(
-                _baseId, _detachmentName, _armyId, _formationId, _titanIndex);
+            var profile = await CatalogCacheService.Instance.LoadBaseProfileAsync(
+                _baseId,
+                _detachmentName,
+                _armyId,
+                _formationId,
+                _titanIndex,
+                updated => MainThread.BeginInvokeOnMainThread(() => ApplyProfile(updated)),
+                CancellationToken.None);
             if (profile is null)
             {
                 ContentHost.IsVisible = true;
@@ -75,65 +81,71 @@ public partial class BaseDetailPage : ContentPage
                 return;
             }
 
-            Title = profile.Name;
-            NameLabel.Text = profile.Name;
-            DetachmentLabel.Text = profile.DetachmentName ?? string.Empty;
-            DetachmentLabel.IsVisible = !string.IsNullOrWhiteSpace(profile.DetachmentName);
-
-            if (profile.HasImage)
-            {
-                BaseImage.Source = profile.Image;
-                BaseImage.IsVisible = true;
-                ImagePlaceholder.IsVisible = false;
-            }
-            else
-            {
-                BaseImage.Source = null;
-                BaseImage.IsVisible = false;
-                ImagePlaceholder.IsVisible = true;
-            }
-
-            MoveValue.Text = profile.MoveText;
-            SaveValue.Text = profile.Save;
-            AfValue.Text = profile.AfText;
-            MoraleValue.Text = profile.MoraleText;
-            ClassValue.Text = profile.ClassText;
-            DpValue.Text = profile.DestructionText;
-
-            BindAbilities(AbilitiesLayout, profile.Abilities);
-            AbilitiesHost.IsVisible = profile.HasAbilities;
-
-            BindAbilities(PsychicPowersLayout, profile.PsychicPowers);
-            PsychicPowersHost.IsVisible = profile.HasPsychicPowers;
-
-            WeaponsHost.Children.Clear();
-            foreach (var weapon in profile.Weapons)
-                WeaponsHost.Children.Add(CreateWeaponView(weapon));
-            if (profile.ChosenTitanWeapons.Count > 0)
-            {
-                WeaponsHost.Children.Add(new Label
-                {
-                    Text = "Chosen weapons",
-                    FontSize = 16,
-                    Margin = new Thickness(0, 8, 0, 0)
-                });
-                foreach (var weapon in profile.ChosenTitanWeapons)
-                    WeaponsHost.Children.Add(CreateWeaponView(weapon));
-            }
-
-            ContentHost.IsVisible = true;
+            ApplyProfile(profile);
         }
         catch (Exception ex)
         {
             ContentHost.IsVisible = true;
             ErrorLabel.IsVisible = true;
-            ErrorLabel.Text = "Could not load this base.";
+            ErrorLabel.Text = "Could not load this base. Check the database connection.";
             System.Diagnostics.Debug.WriteLine(ex);
         }
         finally
         {
             SetBusy(false);
         }
+    }
+
+    void ApplyProfile(BaseProfile profile)
+    {
+        Title = profile.Name;
+        NameLabel.Text = profile.Name;
+        DetachmentLabel.Text = profile.DetachmentName ?? string.Empty;
+        DetachmentLabel.IsVisible = !string.IsNullOrWhiteSpace(profile.DetachmentName);
+
+        if (profile.HasImage)
+        {
+            BaseImage.Source = profile.Image;
+            BaseImage.IsVisible = true;
+            ImagePlaceholder.IsVisible = false;
+        }
+        else
+        {
+            BaseImage.Source = null;
+            BaseImage.IsVisible = false;
+            ImagePlaceholder.IsVisible = true;
+        }
+
+        MoveValue.Text = profile.MoveText;
+        SaveValue.Text = profile.Save;
+        AfValue.Text = profile.AfText;
+        MoraleValue.Text = profile.MoraleText;
+        ClassValue.Text = profile.ClassText;
+        DpValue.Text = profile.DestructionText;
+
+        BindAbilities(AbilitiesLayout, profile.Abilities);
+        AbilitiesHost.IsVisible = profile.HasAbilities;
+
+        BindAbilities(PsychicPowersLayout, profile.PsychicPowers);
+        PsychicPowersHost.IsVisible = profile.HasPsychicPowers;
+
+        WeaponsHost.Children.Clear();
+        foreach (var weapon in profile.Weapons)
+            WeaponsHost.Children.Add(CreateWeaponView(weapon));
+        if (profile.ChosenTitanWeapons.Count > 0)
+        {
+            WeaponsHost.Children.Add(new Label
+            {
+                Text = "Chosen weapons",
+                FontSize = 16,
+                Margin = new Thickness(0, 8, 0, 0)
+            });
+            foreach (var weapon in profile.ChosenTitanWeapons)
+                WeaponsHost.Children.Add(CreateWeaponView(weapon));
+        }
+
+        ContentHost.IsVisible = true;
+        ErrorLabel.IsVisible = false;
     }
 
     View CreateWeaponView(WeaponProfile weapon)

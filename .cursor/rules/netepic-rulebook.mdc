@@ -19,6 +19,7 @@ Baguettepic is a companion app for Palladium NetEpic 3. Game rules, army books, 
 |---|---|
 | Core rulebook (LaTeX) | `Rulebook 303/` |
 | Tyranids army book | `Tyranids 300/` |
+| Exodites army book | `Exodites 300/` |
 | Domain class diagram (schema inspiration) | `Rulebook 303/class-diagram.md` |
 
 Key rulebook sections under `Rulebook 303/`:

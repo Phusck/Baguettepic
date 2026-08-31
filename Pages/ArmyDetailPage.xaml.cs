@@ -115,11 +115,17 @@ public partial class ArmyDetailPage : ContentPage
 
     async Task LoadAsync()
     {
+        if (ArmyCacheService.Instance.TryGetArmy(_armyId, out var cached))
+        {
+            ApplyArmy(cached);
+            return;
+        }
+
         try
         {
             SetBusy(true);
             StatusLabel.Text = "Loading…";
-            var army = await DatabaseService.Instance.GetArmyAsync(_armyId);
+            var army = await ArmyCacheService.Instance.RefreshArmyAsync(_armyId);
             if (army is null)
             {
                 NameLabel.Text = "Army not found";
@@ -130,13 +136,7 @@ public partial class ArmyDetailPage : ContentPage
                 return;
             }
 
-            Title = army.Name;
-            NameLabel.Text = army.Name;
-            SummaryLabel.Text = army.Summary;
-            BindFactionRules(army.SpecialRules);
-            EntriesList.ItemsSource = army.Entries;
-            StatusLabel.ClearValue(Label.TextColorProperty);
-            StatusLabel.Text = army.Entries.Count == 1 ? "1 formation" : $"{army.Entries.Count} formations";
+            ApplyArmy(army);
         }
         catch (Exception ex)
         {
@@ -148,6 +148,17 @@ public partial class ArmyDetailPage : ContentPage
         {
             SetBusy(false);
         }
+    }
+
+    void ApplyArmy(ArmyDetail army)
+    {
+        Title = army.Name;
+        NameLabel.Text = army.Name;
+        SummaryLabel.Text = army.Summary;
+        BindFactionRules(army.SpecialRules);
+        EntriesList.ItemsSource = army.Entries;
+        StatusLabel.ClearValue(Label.TextColorProperty);
+        StatusLabel.Text = army.Entries.Count == 1 ? "1 formation" : $"{army.Entries.Count} formations";
     }
 
     void SetBusy(bool busy)

@@ -30,18 +30,18 @@ public partial class ArmiesPage : ContentPage
 
     async Task LoadAsync()
     {
+        if (ArmyCacheService.Instance.TryGetArmies(out var cached))
+        {
+            ApplyArmies(cached);
+            return;
+        }
+
         try
         {
             SetBusy(true);
             StatusLabel.Text = "Loading…";
-            var results = await DatabaseService.Instance.GetArmiesAsync();
-
-            _armies.Clear();
-            foreach (var army in results)
-                _armies.Add(army);
-
-            StatusLabel.ClearValue(Label.TextColorProperty);
-            StatusLabel.Text = results.Count == 1 ? "1 army" : $"{results.Count} armies";
+            var results = await ArmyCacheService.Instance.RefreshArmiesAsync();
+            ApplyArmies(results);
         }
         catch (Exception ex)
         {
@@ -54,6 +54,16 @@ public partial class ArmiesPage : ContentPage
         {
             SetBusy(false);
         }
+    }
+
+    void ApplyArmies(IReadOnlyList<ArmyListItem> results)
+    {
+        _armies.Clear();
+        foreach (var army in results)
+            _armies.Add(army);
+
+        StatusLabel.ClearValue(Label.TextColorProperty);
+        StatusLabel.Text = results.Count == 1 ? "1 army" : $"{results.Count} armies";
     }
 
     void SetBusy(bool busy)

@@ -33,6 +33,7 @@ erDiagram
     Codex {
         int CodexId PK
         varchar CodexName UK
+        tinyint UsesCommandPoints
     }
 
     FormationKind {

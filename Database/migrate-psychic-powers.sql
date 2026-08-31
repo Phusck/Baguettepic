@@ -1,5 +1,6 @@
 -- Move unit psychic powers out of SpecialAbility into their own catalog.
--- Powers: Bio-Resistance, Psychic Scream, Psychic Projectile, Warp Field, Energy Torrent.
+-- Powers: Bio-Resistance, Psychic Scream, Psychic Projectile, Warp Field,
+-- Energy Torrent, Synaptic Beacon.
 -- Psyker / Psychic Save / Psychic Attack / Psychic Abomination stay as SpecialAbility.
 
 SET NAMES utf8mb4;
@@ -34,7 +35,8 @@ WHERE sa.SpecialAbilityName IN (
     'Psychic Scream',
     'Psychic Projectile',
     'Warp Field',
-    'Energy Torrent'
+    'Energy Torrent',
+    'Synaptic Beacon'
 )
 AND NOT EXISTS (
     SELECT 1 FROM PsychicPower pp WHERE pp.PsychicPowerName = sa.SpecialAbilityName
@@ -50,7 +52,8 @@ WHERE sa.SpecialAbilityName IN (
     'Psychic Scream',
     'Psychic Projectile',
     'Warp Field',
-    'Energy Torrent'
+    'Energy Torrent',
+    'Synaptic Beacon'
 )
 ON DUPLICATE KEY UPDATE AbilityValue = VALUES(AbilityValue);
 
@@ -61,7 +64,8 @@ WHERE sa.SpecialAbilityName IN (
     'Psychic Scream',
     'Psychic Projectile',
     'Warp Field',
-    'Energy Torrent'
+    'Energy Torrent',
+    'Synaptic Beacon'
 );
 
 DELETE FROM SpecialAbility
@@ -70,5 +74,6 @@ WHERE SpecialAbilityName IN (
     'Psychic Scream',
     'Psychic Projectile',
     'Warp Field',
-    'Energy Torrent'
+    'Energy Torrent',
+    'Synaptic Beacon'
 );

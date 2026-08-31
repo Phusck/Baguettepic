@@ -22,52 +22,165 @@ public sealed class DatabaseService
 
     IReadOnlyList<RuleListItem>? _ruleNamesCache;
 
-    public async Task<IReadOnlyList<RuleListItem>> SearchRulesAsync(string? query, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<RuleListItem>> SearchRulesByNameAsync(
+        string? query,
+        CancellationToken cancellationToken = default)
     {
         var term = (query ?? string.Empty).Trim();
-        var like = "%" + EscapeLike(term) + "%";
+        if (term.Length == 0)
+            return await GetAllRuleNamesAsync(cancellationToken);
 
+        var like = "%" + EscapeLike(term) + "%";
         var results = new List<RuleListItem>();
         await using (var conn = await OpenAsync(cancellationToken))
         await using (var cmd = conn.CreateCommand())
         {
             cmd.CommandText = """
-                SELECT Id, Name, Description, Kind FROM (
-                    SELECT SpecialAbilityId AS Id, SpecialAbilityName AS Name, Description, 'Ability' AS Kind
+                SELECT Id, Name, Kind FROM (
+                    SELECT SpecialAbilityId AS Id, SpecialAbilityName AS Name, 'Ability' AS Kind
                     FROM SpecialAbility
                     UNION ALL
-                    SELECT PsychicPowerId, PsychicPowerName, Description, 'Psychic Power'
+                    SELECT PsychicPowerId, PsychicPowerName, 'Psychic Power'
                     FROM PsychicPower
                     UNION ALL
-                    SELECT RuleId, RuleName, Description, 'Rule'
+                    SELECT RuleId, RuleName, 'Rule'
                     FROM Rule
                     UNION ALL
-                    SELECT SpecialRuleId, SpecialRuleName, Description, 'Special Rule'
+                    SELECT SpecialRuleId, SpecialRuleName, 'Special Rule'
                     FROM SpecialRule
                 ) AS Rules
-                WHERE @empty = 1
-                   OR Name LIKE @like ESCAPE '\\'
-                   OR Description LIKE @like ESCAPE '\\'
-                ORDER BY
-                    CASE
-                        WHEN @empty = 1 THEN 0
-                        WHEN Name LIKE @like ESCAPE '\\' THEN 0
-                        ELSE 1
-                    END,
-                    Name
+                WHERE Name LIKE @like ESCAPE '\\'
+                ORDER BY Name
                 """;
-            cmd.Parameters.AddWithValue("@empty", term.Length == 0 ? 1 : 0);
             cmd.Parameters.AddWithValue("@like", like);
 
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
-                results.Add(ReadRule(reader));
+                results.Add(ReadRuleSummary(reader));
         }
 
-        if (term.Length > 0)
-            await AddParameterizedMatchesAsync(results, term, cancellationToken);
+        var names = await GetAllRuleNamesAsync(cancellationToken);
+        AddParameterizedNameMatches(results, term, names);
+        return results;
+    }
+
+    public async Task<IReadOnlyList<RuleListItem>> SearchRulesByDescriptionAsync(
+        string query,
+        IReadOnlyList<RuleListItem> nameMatches,
+        CancellationToken cancellationToken = default)
+    {
+        var term = query.Trim();
+        if (term.Length == 0)
+            return [];
+
+        var like = "%" + EscapeLike(term) + "%";
+        var exclude = new HashSet<(int Id, string Kind)>(
+            nameMatches.Select(rule => (rule.Id, rule.Kind)));
+
+        var results = new List<RuleListItem>();
+        await using var conn = await OpenAsync(cancellationToken);
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT Id, Name, Kind FROM (
+                SELECT SpecialAbilityId AS Id, SpecialAbilityName AS Name, Description, 'Ability' AS Kind
+                FROM SpecialAbility
+                UNION ALL
+                SELECT PsychicPowerId, PsychicPowerName, Description, 'Psychic Power'
+                FROM PsychicPower
+                UNION ALL
+                SELECT RuleId, RuleName, Description, 'Rule'
+                FROM Rule
+                UNION ALL
+                SELECT SpecialRuleId, SpecialRuleName, Description, 'Special Rule'
+                FROM SpecialRule
+            ) AS Rules
+            WHERE Description LIKE @like ESCAPE '\\'
+            ORDER BY Name
+            """;
+        cmd.Parameters.AddWithValue("@like", like);
+
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var item = ReadRuleSummary(reader);
+            if (exclude.Contains((item.Id, item.Kind)))
+                continue;
+
+            results.Add(item);
+        }
 
         return results;
+    }
+
+    public async Task<IReadOnlyList<RuleListItem>> FetchAllRulesWithDescriptionsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        await using var conn = await OpenAsync(cancellationToken);
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT Id, Name, Description, Kind FROM (
+                SELECT SpecialAbilityId AS Id, SpecialAbilityName AS Name, Description, 'Ability' AS Kind
+                FROM SpecialAbility
+                UNION ALL
+                SELECT PsychicPowerId, PsychicPowerName, Description, 'Psychic Power'
+                FROM PsychicPower
+                UNION ALL
+                SELECT RuleId, RuleName, Description, 'Rule'
+                FROM Rule
+                UNION ALL
+                SELECT SpecialRuleId, SpecialRuleName, Description, 'Special Rule'
+                FROM SpecialRule
+            ) AS Rules
+            ORDER BY Name
+            """;
+
+        var results = new List<RuleListItem>();
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            results.Add(new RuleListItem
+            {
+                Id = reader.GetInt32("Id"),
+                Name = reader.GetString("Name"),
+                Description = reader.GetString("Description"),
+                Kind = reader.GetString("Kind")
+            });
+        }
+
+        return results;
+    }
+
+    public async Task<byte[]?> GetBaseImageBytesAsync(int baseId, CancellationToken cancellationToken = default)
+    {
+        await using var conn = await OpenAsync(cancellationToken);
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT Image FROM `Base` WHERE BaseId = @id LIMIT 1";
+        cmd.Parameters.AddWithValue("@id", baseId);
+        var value = await cmd.ExecuteScalarAsync(cancellationToken);
+        return value is DBNull or null ? null : (byte[])value;
+    }
+
+    public async Task<IReadOnlyList<WeaponProfile>> GetChosenTitanWeaponsForBaseAsync(
+        int baseId,
+        int armyId,
+        int formationId,
+        int? titanIndex,
+        CancellationToken cancellationToken = default)
+    {
+        await using var conn = await OpenAsync(cancellationToken);
+        var selected = await LoadChosenTitanCatalogAsync(conn, armyId, formationId, titanIndex, cancellationToken);
+        if (selected.Count == 0)
+            return [];
+
+        var allWeapons = await LoadWeaponsForBaseAsync(conn, baseId, cancellationToken);
+        var chosen = new List<WeaponProfile>();
+        foreach (var (titanWeaponId, catalogName, cost) in selected)
+        {
+            foreach (var weapon in allWeapons.Where(w => w.IsTitanWeapon && MatchesTitanCatalogName(w.Name, catalogName)))
+                chosen.Add(WithPointsCost(weapon, cost, titanWeaponId));
+        }
+
+        return chosen;
     }
 
     public async Task<RuleListItem?> GetRuleAsync(int id, string kind, CancellationToken cancellationToken = default)
@@ -144,6 +257,13 @@ public sealed class DatabaseService
         if (updated == 0)
             throw new InvalidOperationException("The rule could not be updated.");
         _ruleNamesCache = null;
+        await CatalogCacheService.Instance.UpsertRuleAsync(new RuleListItem
+        {
+            Id = id,
+            Kind = kind,
+            Name = name,
+            Description = description
+        }, cancellationToken);
     }
 
     public async Task<int> CreateRuleAsync(string name, string description, CancellationToken cancellationToken = default)
@@ -155,7 +275,15 @@ public sealed class DatabaseService
         cmd.Parameters.AddWithValue("@description", description);
         await cmd.ExecuteNonQueryAsync(cancellationToken);
         _ruleNamesCache = null;
-        return (int)cmd.LastInsertedId;
+        var newId = (int)cmd.LastInsertedId;
+        await CatalogCacheService.Instance.UpsertRuleAsync(new RuleListItem
+        {
+            Id = newId,
+            Kind = "Rule",
+            Name = name,
+            Description = description
+        }, cancellationToken);
+        return newId;
     }
 
     public async Task<SessionUser?> AuthenticateAsync(
@@ -224,7 +352,7 @@ public sealed class DatabaseService
         await using var conn = await OpenAsync(cancellationToken);
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = """
-            SELECT a.ArmyId, a.ArmyName, c.CodexName, a.PointsLimit,
+            SELECT a.ArmyId, a.ArmyName, c.CodexName, c.UsesCommandPoints, a.PointsLimit,
                    COALESCE(SUM(af.Quantity * f.PointsCost), 0) AS PointsCost,
                    COALESCE(SUM(CAST(af.Quantity AS SIGNED) * f.CommandPoints), 0) AS CommandPoints,
                    COUNT(af.FormationId) AS EntryCount
@@ -233,7 +361,7 @@ public sealed class DatabaseService
             LEFT JOIN ArmyFormation af ON af.ArmyId = a.ArmyId
             LEFT JOIN Formation f ON f.FormationId = af.FormationId
             WHERE a.UserId = @userId
-            GROUP BY a.ArmyId, a.ArmyName, c.CodexName, a.PointsLimit
+            GROUP BY a.ArmyId, a.ArmyName, c.CodexName, c.UsesCommandPoints, a.PointsLimit
             ORDER BY a.ArmyName
             """;
         cmd.Parameters.AddWithValue("@userId", RequireUserId());
@@ -251,7 +379,8 @@ public sealed class DatabaseService
                 PointsLimit = reader.GetInt32("PointsLimit"),
                 PointsCost = reader.GetInt32("PointsCost") + extraPoints.GetValueOrDefault(reader.GetInt32("ArmyId")),
                 CommandPoints = reader.GetInt32("CommandPoints"),
-                EntryCount = reader.GetInt32("EntryCount")
+                EntryCount = reader.GetInt32("EntryCount"),
+                UsesCommandPoints = reader.GetBoolean("UsesCommandPoints")
             });
         }
 
@@ -263,7 +392,7 @@ public sealed class DatabaseService
         await using var conn = await OpenAsync(cancellationToken);
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = """
-            SELECT a.ArmyId, a.CodexId, a.ArmyName, c.CodexName, a.PointsLimit,
+            SELECT a.ArmyId, a.CodexId, a.ArmyName, c.CodexName, c.UsesCommandPoints, a.PointsLimit,
                    f.FormationId, f.FormationName, f.Contents, af.Quantity, f.PointsCost, f.CommandPoints,
                    COALESCE((
                        SELECT MIN(d.Class)
@@ -283,10 +412,12 @@ public sealed class DatabaseService
 
         ArmyDetail? army = null;
         var entries = new List<ArmyEntry>();
+        var usesCommandPoints = false;
         await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
         {
             while (await reader.ReadAsync(cancellationToken))
             {
+                usesCommandPoints = reader.GetBoolean("UsesCommandPoints");
                 army ??= new ArmyDetail
                 {
                     Id = reader.GetInt32("ArmyId"),
@@ -294,6 +425,7 @@ public sealed class DatabaseService
                     Name = reader.GetString("ArmyName"),
                     CodexName = reader.GetString("CodexName"),
                     PointsLimit = reader.GetInt32("PointsLimit"),
+                    UsesCommandPoints = usesCommandPoints,
                     Entries = entries
                 };
 
@@ -309,6 +441,7 @@ public sealed class DatabaseService
                     PointsCost = reader.GetInt32("PointsCost"),
                     CommandPoints = reader.GetInt32("CommandPoints"),
                     Class = reader.GetInt32("Class"),
+                    UsesCommandPoints = usesCommandPoints,
                     Titans = []
                 });
             }
@@ -332,6 +465,7 @@ public sealed class DatabaseService
         Name = army.Name,
         CodexName = army.CodexName,
         PointsLimit = army.PointsLimit,
+        UsesCommandPoints = army.UsesCommandPoints,
         Entries = army.Entries,
         SpecialRules = specialRules
     };
@@ -391,7 +525,7 @@ public sealed class DatabaseService
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = """
             SELECT f.FormationId, f.FormationName, k.KindName, f.Contents,
-                   f.PointsCost, f.CommandPoints,
+                   f.PointsCost, f.CommandPoints, c.UsesCommandPoints,
                    COALESCE((
                        SELECT MIN(d.Class)
                        FROM FormationDetachment fd
@@ -400,6 +534,7 @@ public sealed class DatabaseService
                    ), 0) AS Class
             FROM Formation f
             JOIN FormationKind k ON k.FormationKindId = f.FormationKindId
+            JOIN Codex c ON c.CodexId = f.CodexId
             WHERE f.CodexId = @codexId
               AND EXISTS (
                   SELECT 1 FROM FormationDetachment fd WHERE fd.FormationId = f.FormationId
@@ -431,7 +566,8 @@ public sealed class DatabaseService
                 Contents = reader.GetString("Contents"),
                 PointsCost = reader.GetInt32("PointsCost"),
                 CommandPoints = reader.GetInt32("CommandPoints"),
-                Class = reader.GetInt32("Class")
+                Class = reader.GetInt32("Class"),
+                UsesCommandPoints = reader.GetBoolean("UsesCommandPoints")
             });
         }
 
@@ -443,10 +579,11 @@ public sealed class DatabaseService
         await using var conn = await OpenAsync(cancellationToken);
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = """
-            SELECT f.FormationId, f.FormationName,
+            SELECT f.FormationId, f.FormationName, c.UsesCommandPoints,
                    d.DetachmentId, d.DetachmentName, d.CommandPoints, d.Class,
                    b.BaseId, b.BaseName, dc.BaseCount, b.Class AS BaseClass
             FROM Formation f
+            JOIN Codex c ON c.CodexId = f.CodexId
             LEFT JOIN FormationDetachment fd ON fd.FormationId = f.FormationId
             LEFT JOIN Detachment d ON d.DetachmentId = fd.DetachmentId
             LEFT JOIN DetachmentComposition dc ON dc.DetachmentId = d.DetachmentId
@@ -461,9 +598,11 @@ public sealed class DatabaseService
         var detachments = new List<DetachmentGroup>();
         DetachmentGroup? current = null;
         var bases = new List<DetachmentBaseRow>();
+        var usesCommandPoints = false;
 
         while (await reader.ReadAsync(cancellationToken))
         {
+            usesCommandPoints = reader.GetBoolean("UsesCommandPoints");
             roster ??= new FormationRoster
             {
                 FormationId = reader.GetInt32("FormationId"),
@@ -484,6 +623,7 @@ public sealed class DatabaseService
                     DetachmentName = reader.GetString("DetachmentName"),
                     CommandPoints = reader.GetInt32("CommandPoints"),
                     Class = reader.GetInt32("Class"),
+                    UsesCommandPoints = usesCommandPoints,
                     Bases = bases
                 };
                 detachments.Add(current);
@@ -511,23 +651,32 @@ public sealed class DatabaseService
         int armyId = 0,
         int formationId = 0,
         int? titanIndex = null,
+        bool includeImage = true,
         CancellationToken cancellationToken = default)
     {
         await using var conn = await OpenAsync(cancellationToken);
 
         await using var baseCmd = conn.CreateCommand();
-        baseCmd.CommandText = """
-            SELECT BaseId, BaseName, Image, DestructionPoints, Morale, `Class`,
-                   Movement, `Save`, FA
-            FROM `Base`
-            WHERE BaseId = @id
-            LIMIT 1
-            """;
+        baseCmd.CommandText = includeImage
+            ? """
+                SELECT BaseId, BaseName, Image, DestructionPoints, Morale, `Class`,
+                       Movement, `Save`, FA
+                FROM `Base`
+                WHERE BaseId = @id
+                LIMIT 1
+                """
+            : """
+                SELECT BaseId, BaseName, DestructionPoints, Morale, `Class`,
+                       Movement, `Save`, FA
+                FROM `Base`
+                WHERE BaseId = @id
+                LIMIT 1
+                """;
         baseCmd.Parameters.AddWithValue("@id", baseId);
 
         int id;
         string name;
-        byte[]? imageBytes;
+        byte[]? imageBytes = null;
         int destructionPoints;
         string morale;
         int @class;
@@ -541,10 +690,14 @@ public sealed class DatabaseService
 
             id = reader.GetInt32("BaseId");
             name = reader.GetString("BaseName");
-            var imageOrdinal = reader.GetOrdinal("Image");
-            imageBytes = reader.IsDBNull(imageOrdinal)
-                ? null
-                : reader.GetFieldValue<byte[]>(imageOrdinal);
+            if (includeImage)
+            {
+                var imageOrdinal = reader.GetOrdinal("Image");
+                imageBytes = reader.IsDBNull(imageOrdinal)
+                    ? null
+                    : reader.GetFieldValue<byte[]>(imageOrdinal);
+            }
+
             destructionPoints = reader.GetInt32("DestructionPoints");
             morale = reader.GetString("Morale");
             @class = reader.GetInt32("Class");
@@ -696,6 +849,7 @@ public sealed class DatabaseService
         cmd.Parameters.AddWithValue("@name", name);
         cmd.Parameters.AddWithValue("@pointsLimit", pointsLimit);
         await cmd.ExecuteNonQueryAsync(cancellationToken);
+        ArmyCacheService.Instance.InvalidateList();
         return (int)cmd.LastInsertedId;
     }
 
@@ -713,6 +867,7 @@ public sealed class DatabaseService
         cmd.Parameters.AddWithValue("@name", name);
         cmd.Parameters.AddWithValue("@pointsLimit", pointsLimit);
         await cmd.ExecuteNonQueryAsync(cancellationToken);
+        ArmyCacheService.Instance.InvalidateArmy(armyId);
     }
 
     public async Task SetArmyFormationQuantityAsync(int armyId, int formationId, int quantity, CancellationToken cancellationToken = default)
@@ -726,6 +881,7 @@ public sealed class DatabaseService
             cmd.Parameters.AddWithValue("@armyId", armyId);
             cmd.Parameters.AddWithValue("@formationId", formationId);
             await cmd.ExecuteNonQueryAsync(cancellationToken);
+            ArmyCacheService.Instance.InvalidateArmy(armyId);
             return;
         }
 
@@ -739,6 +895,7 @@ public sealed class DatabaseService
         cmd.Parameters.AddWithValue("@quantity", quantity);
         await cmd.ExecuteNonQueryAsync(cancellationToken);
         await TrimArmyTitanWeaponsAsync(conn, armyId, formationId, quantity, cancellationToken);
+        ArmyCacheService.Instance.InvalidateArmy(armyId);
     }
 
     public async Task<IReadOnlyList<TitanWeaponOption>> GetTitanWeaponsAsync(int codexId, CancellationToken cancellationToken = default)
@@ -817,6 +974,7 @@ public sealed class DatabaseService
             TitanWeaponId = titanWeaponId
         });
         await SaveStoredTitanWeaponsAsync(conn, armyId, formationId, stored, cancellationToken);
+        ArmyCacheService.Instance.InvalidateArmy(armyId);
     }
 
     public async Task RemoveArmyTitanWeaponAsync(
@@ -830,6 +988,7 @@ public sealed class DatabaseService
         var stored = await LoadStoredTitanWeaponsAsync(conn, armyId, formationId, cancellationToken);
         stored.RemoveAll(w => w.Id == weaponId);
         await SaveStoredTitanWeaponsAsync(conn, armyId, formationId, stored, cancellationToken);
+        ArmyCacheService.Instance.InvalidateArmy(armyId);
     }
 
     static async Task AttachTitansAsync(
@@ -859,6 +1018,7 @@ public sealed class DatabaseService
                 PointsCost = entry.PointsCost,
                 CommandPoints = entry.CommandPoints,
                 Class = entry.Class,
+                UsesCommandPoints = entry.UsesCommandPoints,
                 Titans = BuildTitanSlots(entry.FormationId, entry.Quantity, formationTemplates, weapons)
             };
         }
@@ -1326,20 +1486,19 @@ public sealed class DatabaseService
         public int TitanWeaponId { get; set; }
     }
 
-    static RuleListItem ReadRule(MySqlDataReader reader) => new()
+    static RuleListItem ReadRuleSummary(MySqlDataReader reader) => new()
     {
         Id = reader.GetInt32("Id"),
         Name = reader.GetString("Name"),
-        Description = reader.GetString("Description"),
+        Description = string.Empty,
         Kind = reader.GetString("Kind")
     };
 
-    async Task AddParameterizedMatchesAsync(
+    static void AddParameterizedNameMatches(
         List<RuleListItem> results,
         string term,
-        CancellationToken cancellationToken)
+        IReadOnlyList<RuleListItem> names)
     {
-        var names = await GetAllRuleNamesAsync(cancellationToken);
         foreach (var name in names)
         {
             if (!ParameterizedName.Matches(name.Name, term))
@@ -1348,9 +1507,7 @@ public sealed class DatabaseService
                 string.Equals(rule.Kind, name.Kind, StringComparison.OrdinalIgnoreCase)))
                 continue;
 
-            var full = await GetRuleAsync(name.Id, name.Kind, cancellationToken);
-            if (full is not null)
-                results.Insert(0, full);
+            results.Insert(0, name);
         }
     }
 

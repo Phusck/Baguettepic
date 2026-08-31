@@ -54,18 +54,42 @@ public partial class RulesPage : ContentPage
         try
         {
             await Task.Delay(200, token);
+            var term = (query ?? string.Empty).Trim();
+
             SetBusy(true);
-            StatusLabel.Text = "Searching…";
-            var results = await DatabaseService.Instance.SearchRulesAsync(query, token);
+            StatusLabel.ClearValue(Label.TextColorProperty);
+            StatusLabel.Text = term.Length == 0 ? "Loading…" : "Searching names…";
+
+            var nameResults = await CatalogCacheService.Instance.SearchRulesByNameAsync(query, token);
             token.ThrowIfCancellationRequested();
 
             _rows.Clear();
-            foreach (var row in BuildRows(results, query))
+            foreach (var row in nameResults)
                 _rows.Add(row);
 
-            StatusLabel.ClearValue(Label.TextColorProperty);
-            var filter = string.IsNullOrWhiteSpace(query) ? "all rules" : "matching rules";
-            StatusLabel.Text = results.Count == 1 ? $"1 {filter.TrimEnd('s')}" : $"{results.Count} {filter}";
+            SetStatus(nameResults.Count, term, searchingDescriptions: false);
+            SetBusy(false);
+
+            if (term.Length == 0)
+                return;
+
+            StatusLabel.Text = FormatStatus(nameResults.Count, term, searchingDescriptions: true);
+            var descriptionResults = await CatalogCacheService.Instance.SearchRulesByDescriptionAsync(
+                term,
+                nameResults,
+                token);
+            token.ThrowIfCancellationRequested();
+
+            if (descriptionResults.Count > 0)
+            {
+                if (nameResults.Count > 0)
+                    _rows.Add(RuleSearchDivider.Instance);
+
+                foreach (var row in descriptionResults)
+                    _rows.Add(row);
+            }
+
+            SetStatus(nameResults.Count + descriptionResults.Count, term, searchingDescriptions: false);
         }
         catch (OperationCanceledException)
         {
@@ -91,30 +115,15 @@ public partial class RulesPage : ContentPage
         BusyIndicator.IsRunning = busy;
     }
 
-    static IEnumerable<object> BuildRows(IReadOnlyList<RuleListItem> results, string? query)
+    void SetStatus(int count, string term, bool searchingDescriptions) =>
+        StatusLabel.Text = FormatStatus(count, term, searchingDescriptions);
+
+    static string FormatStatus(int count, string term, bool searchingDescriptions)
     {
-        var term = (query ?? string.Empty).Trim();
         if (term.Length == 0)
-            return results;
+            return count == 1 ? "1 rule" : $"{count} rules";
 
-        var nameMatches = new List<RuleListItem>();
-        var descriptionMatches = new List<RuleListItem>();
-        foreach (var rule in results)
-        {
-            if (rule.Name.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                ParameterizedName.Matches(rule.Name, term))
-                nameMatches.Add(rule);
-            else
-                descriptionMatches.Add(rule);
-        }
-
-        if (nameMatches.Count == 0 || descriptionMatches.Count == 0)
-            return nameMatches.Count > 0 ? nameMatches : descriptionMatches;
-
-        var rows = new List<object>(nameMatches.Count + descriptionMatches.Count + 1);
-        rows.AddRange(nameMatches);
-        rows.Add(RuleSearchDivider.Instance);
-        rows.AddRange(descriptionMatches);
-        return rows;
+        var summary = count == 1 ? "1 matching rule" : $"{count} matching rules";
+        return searchingDescriptions ? $"{summary} — searching descriptions…" : summary;
     }
 }

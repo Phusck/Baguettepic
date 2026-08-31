@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Baguettepic.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Baguettepic
 {
@@ -7,6 +8,7 @@ namespace Baguettepic
         public App()
         {
             InitializeComponent();
+            CatalogCacheService.Instance.StartWarmup();
         }
 
         protected override Window CreateWindow(IActivationState? activationState)

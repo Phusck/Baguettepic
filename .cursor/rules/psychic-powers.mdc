@@ -1,0 +1,24 @@
+---
+description: Unit psychic powers live in PsychicPower, not SpecialAbility
+alwaysApply: true
+---
+
+# Psychic powers catalog
+
+Codex **psychic powers** (the named powers a Psyker may use each turn) are stored in `PsychicPower` and linked to units via `BasePsychicPower` (`AbilityValue` when parameterized).
+
+```
+✅ PsychicPower + BasePsychicPower     ❌ SpecialAbility + BaseSpecialAbility
+✅ Warp Field, Synaptic Beacon         ❌ listing those under abilities=[...]
+✅ Kind = "Psychic Power" in the app
+```
+
+In seed generators, put them on `PSYCHIC_POWERS` / `psychic_powers=[...]`, not `ABILITIES` / `abilities=[...]`.
+
+Keep related **traits and attack flags** as `SpecialAbility`:
+
+```
+✅ Psyker, Psychic Save (X+), Psychic Attack, Psychic Abomination
+```
+
+Show powers in a separate **Psychic powers** section on base detail (only when the unit has any). Rule detail / Rules search use kind `Psychic Power`.

@@ -55,7 +55,11 @@ public partial class RuleDetailPage : ContentPage
 
         try
         {
-            var rule = await DatabaseService.Instance.GetRuleAsync(_id, _kind, token);
+            var rule = await CatalogCacheService.Instance.GetRuleAsync(
+                _id,
+                _kind,
+                updated => ApplyRule(updated, token),
+                token);
             token.ThrowIfCancellationRequested();
             if (rule is null)
             {
@@ -65,13 +69,7 @@ public partial class RuleDetailPage : ContentPage
                 return;
             }
 
-            _id = rule.Id;
-            _kind = rule.Kind;
-            Title = rule.Name;
-            NameLabel.Text = rule.Name;
-            DescriptionView.Source = MarkdownRenderer.ToHtmlSource(rule.Description);
-
-            _ = LinkifyAsync(rule, token);
+            ApplyRule(rule, token);
         }
         catch (OperationCanceledException)
         {
@@ -84,11 +82,21 @@ public partial class RuleDetailPage : ContentPage
         }
     }
 
+    void ApplyRule(RuleListItem rule, CancellationToken token)
+    {
+        _id = rule.Id;
+        _kind = rule.Kind;
+        Title = rule.Name;
+        NameLabel.Text = rule.Name;
+        DescriptionView.Source = MarkdownRenderer.ToHtmlSource(rule.Description);
+        _ = LinkifyAsync(rule, token);
+    }
+
     async Task LinkifyAsync(RuleListItem rule, CancellationToken token)
     {
         try
         {
-            var names = await DatabaseService.Instance.GetAllRuleNamesAsync(token);
+            var names = await CatalogCacheService.Instance.GetAllRuleNamesAsync(token);
             token.ThrowIfCancellationRequested();
 
             var linked = await Task.Run(() => RuleLinkifier.Apply(rule.Description, names, rule.Id, rule.Kind), token);

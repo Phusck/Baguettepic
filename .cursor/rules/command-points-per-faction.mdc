@@ -1,0 +1,13 @@
+---
+description: Command Points are per-faction; only show for armies that use them
+alwaysApply: true
+---
+
+# Command Points per faction
+
+Command Points (CP) are an optional army-building currency owned by the **Codex**, not a global UI feature.
+
+- Store the switch on `Codex.UsesCommandPoints` (`1` = track and display CP, `0` = ignore).
+- Formation / Detachment `CommandPoints` columns may still exist for every army book; leave them `0` when unused.
+- Only Tyranids currently set `UsesCommandPoints = 1`. New factions default to `0` unless their army book uses CP the same way.
+- Army list, army detail, army builder, formation picker, and detachment summaries must show CP **only** when `UsesCommandPoints` is true.

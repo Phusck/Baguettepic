@@ -9,9 +9,12 @@ public sealed class ArmyDetail
     public required int PointsLimit { get; init; }
     public required IReadOnlyList<ArmyEntry> Entries { get; init; }
     public IReadOnlyList<AbilityLink> SpecialRules { get; init; } = [];
+    public bool UsesCommandPoints { get; init; }
 
     public int PointsCost => Entries.Sum(e => e.LinePoints);
     public int CommandPoints => Entries.Sum(e => e.LineCommandPoints);
     public bool HasSpecialRules => SpecialRules.Count > 0;
-    public string Summary => $"{CodexName}  ·  {PointsCost} / {PointsLimit} pts  ·  {CommandPoints} CP";
+    public string Summary => UsesCommandPoints
+        ? $"{CodexName}  ·  {PointsCost} / {PointsLimit} pts  ·  {CommandPoints} CP"
+        : $"{CodexName}  ·  {PointsCost} / {PointsLimit} pts";
 }

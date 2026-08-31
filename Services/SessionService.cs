@@ -54,6 +54,7 @@ public sealed class SessionService
             return "Incorrect username or password.";
 
         CurrentUser = user;
+        ArmyCacheService.Instance.Clear();
         await WriteSecretAsync(UsernameKey, username);
         await WriteSecretAsync(PasswordKey, password);
         return null;
@@ -78,6 +79,7 @@ public sealed class SessionService
     public void Logout()
     {
         CurrentUser = null;
+        ArmyCacheService.Instance.Clear();
     }
 
     static async Task<string> ReadSecretAsync(string key)

@@ -9,6 +9,9 @@ public sealed class ArmyListItem
     public required int PointsCost { get; init; }
     public required int CommandPoints { get; init; }
     public required int EntryCount { get; init; }
+    public bool UsesCommandPoints { get; init; }
 
-    public string SummaryText => $"{CodexName}  ·  {PointsCost} / {PointsLimit} pts  ·  {CommandPoints} CP";
+    public string SummaryText => UsesCommandPoints
+        ? $"{CodexName}  ·  {PointsCost} / {PointsLimit} pts  ·  {CommandPoints} CP"
+        : $"{CodexName}  ·  {PointsCost} / {PointsLimit} pts";
 }

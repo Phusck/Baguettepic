@@ -9,10 +9,13 @@ public sealed class FormationOption
     public required int PointsCost { get; init; }
     public required int CommandPoints { get; init; }
     public required int Class { get; init; }
+    public bool UsesCommandPoints { get; init; }
 
     public string CostText => $"{PointsCost} pts";
-    public string DetailText => $"{KindName}  ·  {Contents}  ·  {CommandText}";
     public string CommandText => CommandPoints > 0
         ? $"+{CommandPoints} CP"
         : $"{CommandPoints} CP";
+    public string DetailText => UsesCommandPoints
+        ? $"{KindName}  ·  {Contents}  ·  {CommandText}"
+        : $"{KindName}  ·  {Contents}";
 }

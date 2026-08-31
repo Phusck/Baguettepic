@@ -10,6 +10,8 @@ GRANT SELECT ON baguettepic.Formation TO 'Guest'@'%';
 GRANT SELECT ON baguettepic.FormationDetachment TO 'Guest'@'%';
 GRANT SELECT ON baguettepic.FormationKind TO 'Guest'@'%';
 GRANT SELECT ON baguettepic.BaseSpecialAbility TO 'Guest'@'%';
+GRANT SELECT ON baguettepic.PsychicPower TO 'Guest'@'%';
+GRANT SELECT ON baguettepic.BasePsychicPower TO 'Guest'@'%';
 GRANT SELECT ON baguettepic.TitanWeapon TO 'Guest'@'%';
 GRANT SELECT, INSERT, UPDATE, DELETE ON baguettepic.Army TO 'Guest'@'%';
 GRANT SELECT, INSERT, UPDATE, DELETE ON baguettepic.ArmyFormation TO 'Guest'@'%';

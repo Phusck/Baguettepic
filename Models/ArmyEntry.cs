@@ -10,6 +10,7 @@ public sealed class ArmyEntry
     public required int CommandPoints { get; init; }
     public required int Class { get; init; }
     public required IReadOnlyList<ArmyTitanSlot> Titans { get; init; }
+    public bool UsesCommandPoints { get; init; }
 
     public bool HasTitans => Titans.Count > 0;
     public int LinePoints => Quantity * PointsCost + Titans.Sum(t => t.Weapons.Sum(w => w.PointsCost));
@@ -18,5 +19,7 @@ public sealed class ArmyEntry
     public string CommandText => LineCommandPoints > 0
         ? $"+{LineCommandPoints} CP"
         : $"{LineCommandPoints} CP";
-    public string DetailText => $"{Quantity} × {Contents}  ·  {CommandText}";
+    public string DetailText => UsesCommandPoints
+        ? $"{Quantity} × {Contents}  ·  {CommandText}"
+        : $"{Quantity} × {Contents}";
 }
