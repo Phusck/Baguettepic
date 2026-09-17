@@ -73,9 +73,9 @@ public partial class CreateArmyPage : ContentPage
     {
         ErrorLabel.IsVisible = false;
         var name = NameEntry.Text?.Trim() ?? string.Empty;
-        if (name.Length == 0)
+        if (!WindowsFolderName.IsValid(name, out var nameError))
         {
-            ErrorLabel.Text = "Enter a name.";
+            ErrorLabel.Text = nameError;
             ErrorLabel.IsVisible = true;
             return;
         }

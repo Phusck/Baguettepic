@@ -5,21 +5,23 @@ alwaysApply: true
 
 # NetEpic rulebook source of truth
 
-Baguettepic is a companion app for Palladium NetEpic 3. Game rules, army books, and LaTeX source live in a **separate** repository — not in a local Palladium folder on disk.
+Baguettepic is a companion app for Palladium NetEpic 3. Game rules, army books, and LaTeX source live in a **local** checkout of the English translation — not on GitHub for day-to-day agent work.
 
-## Canonical repo
+## Canonical local folder
 
-- Repository: https://github.com/Phusck/NetEpicFR300-EnglishTranslation
-- Default branch: `Development`
-- Do **not** assume a local path such as `Palladium NetEpic 3 English Latex/…`
+- Path: `C:\Files\NetEpicFR300-EnglishTranslation`
+- Do **not** fetch rules from GitHub (`gh api`, raw GitHub URLs, or cloning) when this folder is available.
+- Do **not** invent rules; read the matching `.tex` (or diagram) from this folder.
 
 ## Important folders
 
-| Content | Path in that repo |
+| Content | Path under the local folder |
 |---|---|
 | Core rulebook (LaTeX) | `Rulebook 303/` |
-| Tyranids army book | `Tyranids 300/` |
+| Tyranids army book | `Tyranids 310/` |
 | Exodites army book | `Exodites 300/` |
+| Biel-Tan army book | `Biel-Tan 310/` |
+| Necrons army book | `Necrons 310/` |
 | Domain class diagram (schema inspiration) | `Rulebook 303/class-diagram.md` |
 
 Key rulebook sections under `Rulebook 303/`:
@@ -33,8 +35,7 @@ Key rulebook sections under `Rulebook 303/`:
 
 ## Agent behavior
 
-- When seeding or editing `Database/*.sql`, special abilities, or in-app rule text, read the matching `.tex` (or diagram) from the GitHub repo above.
-- Prefer fetching from that repo (`gh api`, clone, or raw GitHub URLs on branch `Development`) over inventing rules.
-- Cite source paths relative to that repo (e.g. `Rulebook 303/01 - Game Turn/Combat Phase.tex`, `Tyranids 300/Unit Profiles.tex`).
+- When seeding or editing `Database/*.sql`, special abilities, or in-app rule text, read the matching `.tex` (or diagram) from `C:\Files\NetEpicFR300-EnglishTranslation`.
+- Cite source paths relative to that folder (e.g. `Rulebook 303/01 - Game Turn/Combat Phase.tex`, `Tyranids 300/Unit Profiles.tex`).
 - Keep long rule prose out of Cursor rules; point at the files instead.
-- This app repo (`Baguettepic`) owns the MAUI client and MySQL seed/schema; the translation repo owns the printed-rules source.
+- This app repo (`Baguettepic`) owns the MAUI client and MySQL seed/schema; the translation folder owns the printed-rules source.

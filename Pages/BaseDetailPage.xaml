@@ -70,7 +70,7 @@
                             <Label Grid.Column="1" Text="Save" Style="{StaticResource StatHeader}" Padding="2,10" />
                             <Label Grid.Column="2" Text="AF" Style="{StaticResource StatHeader}" Padding="2,10" />
                             <Label Grid.Column="3" Text="Morale" Style="{StaticResource StatHeader}" Padding="2,10" />
-                            <Label Grid.Column="4" Text="Class" Style="{StaticResource StatHeader}" Padding="2,10" />
+                            <Label Grid.Column="4" Text="Class size" Style="{StaticResource StatHeader}" Padding="2,10" />
                             <Label Grid.Column="5" Text="DP" Style="{StaticResource StatHeader}" Padding="2,10" />
                         </Grid>
                         <Grid x:Name="BaseStatsValues" ColumnDefinitions="*,*,*,*,*,*">

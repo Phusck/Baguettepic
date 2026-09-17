@@ -1,4 +1,7 @@
-"""Generate exodites.sql from the Palladium NetEpic 3 Exodites army book."""
+"""Generate exodites.sql from the Palladium NetEpic 3 Exodites army book.
+
+Source: C:/Files/NetEpicFR300-EnglishTranslation/Exodites 300
+"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -8,6 +11,38 @@ OUT = Path(__file__).resolve().parent
 
 def sql_str(text: str) -> str:
     return text.replace("\\", "\\\\").replace("'", "''").replace("\r\n", "\n")
+
+
+IMAGE_ALIASES = {
+    "Bright Stalker": "bright-knights.png",
+    "Bright Stallion": "bright-knights.png",
+    "Fire Gale": "fire-knights.png",
+    "Fire Reaper": "fire-knights.png",
+    "Fire Storm": "fire-knights.png",
+    "Megadon — Assault": "megadon.png",
+    "Megadon — Support": "megadon.png",
+    "Pentasaur — Maelstrom Laser": "pentasaur.png",
+    "Pentasaur — Missile Launcher": "pentasaur.png",
+    "Pentasaur — Thermal Lance": "pentasaur.png",
+    "Travois — Starcannons": "travois.png",
+    "Travois — Bright Lance": "travois.png",
+    "Travois — Missile Launcher": "travois.png",
+    "Combat Walkers": "combat-walkers.png",
+    "Reconnaissance Walkers": "reconnaissance-walkers.png",
+    "Dragon Knights": "dragon-knights.png",
+    "Lethosaur Knights": "lethosaur-knights.png",
+    "Pterosaur Knights": "pterosaur-knights.png",
+    "Raptor Knights": "raptor-knights.png",
+    "Exodite Warriors": "exodite-warriors.png",
+    "Vyper Transport": "vyper-transport.png",
+    "Towering Destroyer": "towering-destroyer.png",
+}
+
+
+def image_path_for(name: str) -> str:
+    if name in IMAGE_ALIASES:
+        return IMAGE_ALIASES[name]
+    return name.lower().replace(" ", "-").replace("—", "").replace("--", "-") + ".png"
 
 
 def union_rows(rows: list[tuple[str, str]]) -> str:
@@ -346,6 +381,33 @@ def formation(kind, name, cost, detachment_name, contents, cls, units):
 FORMATIONS = [
     formation(1, "Baron (Unique)", 125, "Baron Detachment",
               "1 Baron and 2 Dragoon bases", 2, [("Baron", 1), ("Dragoons", 2)]),
+    formation(
+        2, "Infantry Company", 0, "Infantry Company",
+        "Compulsory: Choose 1 (Fusiliers 75 or Warriors 50); Choose 1 (Fusiliers 125 or Warriors 100); "
+        "Choose 2 from Fusiliers/Warriors/Scouts/Travois. Optional: 0–1 Special or Additional Special, "
+        "0–1 Additional Special, 0–5 Support, any Options.",
+        1, [],
+    ),
+    formation(
+        2, "Pentasaur Company", 0, "Pentasaur Company",
+        "Compulsory: Choose 1 Pentasaur variant (discounted); Choose 2 Pentasaur variants (support prices). "
+        "Optional: 0–1 Special or Additional Special, 0–1 Additional Special, 0–5 Support, any Options.",
+        3, [],
+    ),
+    formation(
+        2, "Rapid Intervention Company", 0, "Rapid Intervention Company",
+        "Compulsory: Choose 1 (Dragon Knights 75 or Combat Walkers 125); Choose 1 (Dragon Knights 125 or "
+        "Combat Walkers 175); Choose 2 from cavalry/walker list. Optional: 0–1 Special or Additional Special, "
+        "0–1 Additional Special, 0–5 Support, any Options.",
+        2, [],
+    ),
+    formation(
+        2, "Scout Company", 0, "Scout Company",
+        "Compulsory: Choose 1 (Lethosaur 75 or Raptor 100); Choose 2 (Lethosaur 125 or Raptor 150); "
+        "plus further scout picks per army book. Optional: 0–1 Special or Additional Special, "
+        "0–1 Additional Special, 0–5 Support, any Options.",
+        2, [],
+    ),
     formation(3, "Bright Stalker", 325, "Bright Stalker Detachment",
               "3 Bright Stalker bases", 4, [("Bright Stalker", 3)]),
     formation(3, "Bright Stallion", 300, "Bright Stallion Detachment",
@@ -407,8 +469,8 @@ FORMATIONS = [
 
 def emit_exodites_sql() -> str:
     lines = [
-        "-- Exodites 3.0.0 from NetEpicFR300-EnglishTranslation/Exodites 300",
-        "-- Replaces Exodites catalog data only; existing armies are preserved.",
+        "-- Exodites 3.0.0 from C:/Files/NetEpicFR300-EnglishTranslation/Exodites 300",
+        "-- Upserts Exodites catalog; preserves army lists and Base/Formation ids.",
         "",
         "SET NAMES utf8mb4;",
         "",
@@ -432,6 +494,17 @@ def emit_exodites_sql() -> str:
         "ALTER TABLE Weapon",
         "    MODIFY Dice VARCHAR(32) NOT NULL,",
         "    MODIFY ArmourPenetration VARCHAR(16) NOT NULL;",
+        "",
+        "INSERT INTO FormationKind (FormationKindId, KindName)",
+        "SELECT 1, 'Mandatory' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM FormationKind WHERE FormationKindId = 1);",
+        "INSERT INTO FormationKind (FormationKindId, KindName)",
+        "SELECT 2, 'Company' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM FormationKind WHERE FormationKindId = 2);",
+        "INSERT INTO FormationKind (FormationKindId, KindName)",
+        "SELECT 3, 'Special' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM FormationKind WHERE FormationKindId = 3);",
+        "INSERT INTO FormationKind (FormationKindId, KindName)",
+        "SELECT 4, 'Support' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM FormationKind WHERE FormationKindId = 4);",
+        "INSERT INTO FormationKind (FormationKindId, KindName)",
+        "SELECT 5, 'Option' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM FormationKind WHERE FormationKindId = 5);",
         "",
         "INSERT INTO Codex (CodexName)",
         "SELECT 'Exodites'",
@@ -465,9 +538,8 @@ def emit_exodites_sql() -> str:
         "INNER JOIN `Base` b ON b.BaseId = w.BaseId",
         "WHERE b.CodexId = @codexId;",
         "",
-        "DELETE FROM Formation WHERE CodexId = @codexId;",
-        "DELETE FROM Detachment WHERE CodexId = @codexId;",
-        "DELETE FROM `Base` WHERE CodexId = @codexId;",
+        "DELETE d FROM Detachment d WHERE d.CodexId = @codexId;",
+        "",
         "DELETE FROM SpecialRule WHERE CodexId = @codexId;",
         "",
         "INSERT INTO SpecialAbility (SpecialAbilityName, Description)",
@@ -478,7 +550,6 @@ def emit_exodites_sql() -> str:
         "    SELECT 1 FROM SpecialAbility sa WHERE sa.SpecialAbilityName = src.n",
         ");",
         "",
-        # Only refresh Exodite-unique ability text; do not overwrite shared core abilities.
         "UPDATE SpecialAbility sa",
         "INNER JOIN (",
         union_rows(
@@ -530,8 +601,18 @@ def emit_exodites_sql() -> str:
             f"'{sql_str(b['morale'])}', {b['cls']}, '{sql_str(b['mv'])}', "
             f"'{sql_str(b['save'])}', '{sql_str(b['fa'])}', 0)"
         )
-    lines.append(",\n".join(base_values) + ";")
-    lines.append("")
+    lines.append(",\n".join(base_values))
+    lines.extend([
+        "ON DUPLICATE KEY UPDATE",
+        "    DestructionPoints = VALUES(DestructionPoints),",
+        "    Morale = VALUES(Morale),",
+        "    `Class` = VALUES(`Class`),",
+        "    Movement = VALUES(Movement),",
+        "    `Save` = VALUES(`Save`),",
+        "    FA = VALUES(FA),",
+        "    NumberOfTitanWeapons = VALUES(NumberOfTitanWeapons);",
+        "",
+    ])
 
     for b in BASES:
         lines.append(
@@ -584,24 +665,25 @@ def emit_exodites_sql() -> str:
     for b in BASES:
         for pname, pval in b["psychic_powers"]:
             power_rows.append((var_name(b["name"]), pname, pval))
-    lines.extend([
-        "INSERT INTO BasePsychicPower (BaseId, PsychicPowerId, AbilityValue)",
-        "SELECT src.BaseId, pp.PsychicPowerId, src.AbilityValue",
-        "FROM (",
-    ])
-    union = []
-    for i, (bid, pname, pval) in enumerate(power_rows):
-        prefix = "    SELECT" if i == 0 else "    UNION ALL SELECT"
-        union.append(
-            f"{prefix} {bid} AS BaseId, '{sql_str(pname)}' AS PowerName, "
-            f"'{sql_str(pval)}' AS AbilityValue"
-        )
-    lines.extend([
-        "\n".join(union),
-        ") AS src",
-        "INNER JOIN PsychicPower pp ON pp.PsychicPowerName = src.PowerName;",
-        "",
-    ])
+    if power_rows:
+        lines.extend([
+            "INSERT INTO BasePsychicPower (BaseId, PsychicPowerId, AbilityValue)",
+            "SELECT src.BaseId, pp.PsychicPowerId, src.AbilityValue",
+            "FROM (",
+        ])
+        union = []
+        for i, (bid, pname, pval) in enumerate(power_rows):
+            prefix = "    SELECT" if i == 0 else "    UNION ALL SELECT"
+            union.append(
+                f"{prefix} {bid} AS BaseId, '{sql_str(pname)}' AS PowerName, "
+                f"'{sql_str(pval)}' AS AbilityValue"
+            )
+        lines.extend([
+            "\n".join(union),
+            ") AS src",
+            "INNER JOIN PsychicPower pp ON pp.PsychicPowerName = src.PowerName;",
+            "",
+        ])
 
     wsa_rows = []
     for b in BASES:
@@ -609,25 +691,26 @@ def emit_exodites_sql() -> str:
         for wp in b["weapons"]:
             for aname, aval in wp["abilities"]:
                 wsa_rows.append((bid, wp["name"], aname, aval))
-    lines.extend([
-        "INSERT INTO WeaponSpecialAbility (WeaponId, SpecialAbilityId, AbilityValue)",
-        "SELECT w.WeaponId, sa.SpecialAbilityId, src.AbilityValue",
-        "FROM (",
-    ])
-    union = []
-    for i, (bid, wname, aname, aval) in enumerate(wsa_rows):
-        prefix = "    SELECT" if i == 0 else "    UNION ALL SELECT"
-        union.append(
-            f"{prefix} {bid} AS BaseId, '{sql_str(wname)}' AS WeaponName, "
-            f"'{sql_str(aname)}' AS AbilityName, '{sql_str(aval)}' AS AbilityValue"
-        )
-    lines.extend([
-        "\n".join(union),
-        ") AS src",
-        "INNER JOIN Weapon w ON w.BaseId = src.BaseId AND w.`Name` = src.WeaponName",
-        "INNER JOIN SpecialAbility sa ON sa.SpecialAbilityName = src.AbilityName;",
-        "",
-    ])
+    if wsa_rows:
+        lines.extend([
+            "INSERT INTO WeaponSpecialAbility (WeaponId, SpecialAbilityId, AbilityValue)",
+            "SELECT w.WeaponId, sa.SpecialAbilityId, src.AbilityValue",
+            "FROM (",
+        ])
+        union = []
+        for i, (bid, wname, aname, aval) in enumerate(wsa_rows):
+            prefix = "    SELECT" if i == 0 else "    UNION ALL SELECT"
+            union.append(
+                f"{prefix} {bid} AS BaseId, '{sql_str(wname)}' AS WeaponName, "
+                f"'{sql_str(aname)}' AS AbilityName, '{sql_str(aval)}' AS AbilityValue"
+            )
+        lines.extend([
+            "\n".join(union),
+            ") AS src",
+            "INNER JOIN Weapon w ON w.BaseId = src.BaseId AND w.`Name` = src.WeaponName",
+            "INNER JOIN SpecialAbility sa ON sa.SpecialAbilityName = src.AbilityName;",
+            "",
+        ])
 
     det_rows = [
         f"    (@codexId, '{sql_str(f['detachment'])}', 0, {f['cls']})"
@@ -637,12 +720,13 @@ def emit_exodites_sql() -> str:
         "INSERT INTO Detachment (",
         "    CodexId, DetachmentName, CommandPoints, `Class`",
         ") VALUES",
-        ",\n".join(det_rows) + ";",
+        ",\n".join(det_rows),
+        "ON DUPLICATE KEY UPDATE",
+        "    CommandPoints = VALUES(CommandPoints),",
+        "    `Class` = VALUES(`Class`);",
         "",
-        "INSERT INTO DetachmentComposition (DetachmentId, BaseId, BaseCount)",
-        "SELECT d.DetachmentId, b.BaseId, src.BaseCount",
-        "FROM (",
     ])
+
     comp_union = []
     for f in FORMATIONS:
         for unit, count in f["units"]:
@@ -651,15 +735,19 @@ def emit_exodites_sql() -> str:
                 f"{prefix} '{sql_str(f['detachment'])}' AS DetachmentName, "
                 f"'{sql_str(unit)}' AS UnitName, {count} AS BaseCount"
             )
-    lines.extend([
-        "\n".join(comp_union),
-        ") AS src",
-        "INNER JOIN Detachment d",
-        "    ON d.CodexId = @codexId AND d.DetachmentName = src.DetachmentName",
-        "INNER JOIN `Base` b",
-        "    ON b.CodexId = @codexId AND b.BaseName = src.UnitName;",
-        "",
-    ])
+    if comp_union:
+        lines.extend([
+            "INSERT INTO DetachmentComposition (DetachmentId, BaseId, BaseCount)",
+            "SELECT d.DetachmentId, b.BaseId, src.BaseCount",
+            "FROM (",
+            "\n".join(comp_union),
+            ") AS src",
+            "INNER JOIN Detachment d",
+            "    ON d.CodexId = @codexId AND d.DetachmentName = src.DetachmentName",
+            "INNER JOIN `Base` b",
+            "    ON b.CodexId = @codexId AND b.BaseName = src.UnitName;",
+            "",
+        ])
 
     form_rows = [
         f"    (@codexId, {f['kind']}, '{sql_str(f['name'])}', {f['cost']}, 0, "
@@ -671,7 +759,13 @@ def emit_exodites_sql() -> str:
         "    CodexId, FormationKindId, FormationName, PointsCost, CommandPoints, Contents,",
         "    DestructionPoints",
         ") VALUES",
-        ",\n".join(form_rows) + ";",
+        ",\n".join(form_rows),
+        "ON DUPLICATE KEY UPDATE",
+        "    FormationKindId = VALUES(FormationKindId),",
+        "    PointsCost = VALUES(PointsCost),",
+        "    CommandPoints = VALUES(CommandPoints),",
+        "    Contents = VALUES(Contents),",
+        "    DestructionPoints = VALUES(DestructionPoints);",
         "",
         "INSERT INTO FormationDetachment (FormationId, DetachmentId, Quantity)",
         "SELECT f.FormationId, d.DetachmentId, 1",

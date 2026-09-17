@@ -5,7 +5,8 @@
              Title="Main Menu"
              Shell.NavBarIsVisible="False">
 
-    <Grid Padding="24" RowDefinitions="Auto,*,Auto">
+    <Grid>
+        <Grid Padding="24" RowDefinitions="Auto,*,Auto">
         <VerticalStackLayout Grid.Row="0" Spacing="4" Margin="0,12,0,24">
             <Label Text="Baguettepic"
                    Style="{StaticResource Headline}"
@@ -53,5 +54,14 @@
                 HorizontalOptions="Center"
                 Margin="0,0,0,8"
                 Clicked="OnLogoutClicked" />
+        </Grid>
+
+        <Label x:Name="VersionLabel"
+               FontSize="12"
+               TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+               HorizontalOptions="End"
+               VerticalOptions="End"
+               Margin="16"
+               InputTransparent="True" />
     </Grid>
 </ContentPage>

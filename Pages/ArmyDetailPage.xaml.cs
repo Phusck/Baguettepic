@@ -11,7 +11,10 @@ public partial class ArmyDetailPage : ContentPage
     public ArmyDetailPage()
     {
         InitializeComponent();
+        AddWindowsPdfActions();
     }
+
+    partial void AddWindowsPdfActions();
 
     public string ArmyId
     {

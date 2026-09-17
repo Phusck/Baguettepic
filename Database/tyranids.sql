@@ -1,5 +1,5 @@
--- Tyranids 3.0.0 from NetEpicFR300-EnglishTranslation/Tyranids 300
--- Replaces the dummy Tyranid seed. Also deletes all army lists.
+-- Tyranids 3.1.0 from C:/Files/NetEpicFR300-EnglishTranslation/Tyranids 310
+-- Upserts Tyranid catalog data. Preserves army lists and Base/Formation ids.
 
 SET NAMES utf8mb4;
 
@@ -60,17 +60,12 @@ SELECT 7, 'Synapse' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM FormationKind WHER
 INSERT INTO FormationKind (FormationKindId, KindName)
 SELECT 8, 'Slave' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM FormationKind WHERE FormationKindId = 8);
 
-DELETE FROM ArmyFormation;
-DELETE FROM Army;
-
 INSERT INTO Codex (CodexName)
 SELECT 'Tyranids'
 WHERE NOT EXISTS (SELECT 1 FROM Codex WHERE CodexName = 'Tyranids');
 
 SET @codexId := (SELECT CodexId FROM Codex WHERE CodexName = 'Tyranids');
 UPDATE Codex SET UsesCommandPoints = 1 WHERE CodexId = @codexId;
-
-DELETE FROM TitanWeapon WHERE CodexId = @codexId;
 
 DELETE wsa FROM WeaponSpecialAbility wsa
 INNER JOIN Weapon w ON w.WeaponId = wsa.WeaponId
@@ -97,10 +92,66 @@ DELETE w FROM Weapon w
 INNER JOIN `Base` b ON b.BaseId = w.BaseId
 WHERE b.CodexId = @codexId;
 
-DELETE FROM Formation WHERE CodexId = @codexId;
-DELETE FROM Detachment WHERE CodexId = @codexId;
-DELETE FROM `Base` WHERE CodexId = @codexId;
+DELETE d FROM Detachment d
+WHERE d.CodexId = @codexId;
+
 DELETE FROM SpecialRule WHERE CodexId = @codexId;
+
+-- Preserve Base and Formation rows (and army lists). Upsert catalog fields.
+INSERT INTO `Base` (
+    CodexId, BaseName, DestructionPoints,
+    Morale, `Class`, Movement, `Save`, FA, NumberOfTitanWeapons
+) VALUES
+    (@codexId, 'Barbgaunt', 0, '6', 1, '10', '--', '+0', 0),
+    (@codexId, 'Hive Guard', 0, '6', 1, '10', '4+', '+2', 0),
+    (@codexId, 'Gargoyles', 0, '6', 1, '15', '--', '+1', 0),
+    (@codexId, 'Alpha Genestealer', 0, 'Attached', 1, '15', '5+f', '+8', 0),
+    (@codexId, 'Genestealers', 0, '5', 1, '15', '--', '+6', 0),
+    (@codexId, 'Tyranid Warriors', 0, '--', 1, '10', '4+', '+5', 0),
+    (@codexId, 'Hormagaunts', 0, '6', 1, '15', '--', '+2', 0),
+    (@codexId, 'Lictor', 0, '5', 1, '15', '5+', '+5', 0),
+    (@codexId, 'Termagants', 0, '6', 1, '15', '--', '+1', 0),
+    (@codexId, 'Rippers', 0, '6', 1, '10', '--', '-1', 0),
+    (@codexId, 'Raveners', 0, '6', 2, '20', '6+f', '+4', 0),
+    (@codexId, 'Carnifex', 0, '6', 2, '15', '3+', '+6', 0),
+    (@codexId, 'Winged Hive Tyrant', 0, '--', 2, '25', '3+', '+7', 0),
+    (@codexId, 'Hive Tyrant', 0, '--', 2, '15', '3+', '+6', 0),
+    (@codexId, 'Venomthrope', 0, '6', 2, '15', '4+', '+4', 0),
+    (@codexId, 'Zoanthrope', 0, '5', 2, '10', '5+', '+1', 0),
+    (@codexId, 'Biovore', 0, '6', 3, '15', '4+', '+0', 0),
+    (@codexId, 'Dactylis', 0, '6', 3, '15', '3+', '+1', 0),
+    (@codexId, 'Exocrine', 0, '6', 3, '15', '3+', '+1', 0),
+    (@codexId, 'Harpy', 0, '5', 3, '25', '3+', '+4', 0),
+    (@codexId, 'Haruspex', 0, '6', 3, '20', '2+', '+7', 0),
+    (@codexId, 'Malefactor', 0, 'Attached', 3, '20', '2+', '+5', 0),
+    (@codexId, 'Neurotyrant', 0, '--', 3, '20', '3+', '+2', 0),
+    (@codexId, 'Pyrovore', 0, '6', 3, '15', '4+', '+0', 0),
+    (@codexId, 'Mycetic Spore', 0, '--', 3, '0', '3+', '+0', 0),
+    (@codexId, 'Tervigon', 0, 'Attached', 3, '20', '3+', '+5', 0),
+    (@codexId, 'Toxicrene', 0, '6', 3, '20', '2+', '+5', 0),
+    (@codexId, 'Virago', 0, '5', 3, '25', '3+', '+6', 0),
+    (@codexId, 'Dimachaeron', 0, '5', 4, '25', '3+', '+8', 0),
+    (@codexId, 'Barbed Hierodule', 0, '5', 4, '20', '2+', '+10', 0),
+    (@codexId, 'Scythed Hierodule', 0, '5', 4, '20', '2+', '+12', 0),
+    (@codexId, 'Razorfex', 0, '5', 4, '20', '2+', '+9', 0),
+    (@codexId, 'Norn Queen', 0, '--', 4, '15', '2+', '+10', 0),
+    (@codexId, 'Dominatrix', 0, '--', 4, '15', '2+', '+10', 0),
+    (@codexId, 'Harridan', 0, '--', 4, '20', '2+', '+5', 0),
+    (@codexId, 'Trygon', 0, '--', 4, '15', '2+', '+7', 0),
+    (@codexId, 'Assault Tyrannofex', 0, '5', 4, '20', '2+', '+8', 0),
+    (@codexId, 'Support Tyrannofex', 0, '5', 4, '15', '2+', '+5', 0),
+    (@codexId, 'Alpha Hierodule', 0, '--', 5, '25', '2+ Chart', '+13', 2),
+    (@codexId, 'Hierophant', 0, '--', 6, '25', '2+ Chart', '+17', 3),
+    (@codexId, 'Bio-Plasma Shot', 0, '--', 0, '--', '--', '--', 0),
+    (@codexId, 'Spore-Mine Shot', 0, '--', 0, '--', '--', '--', 0)
+ON DUPLICATE KEY UPDATE
+    DestructionPoints = VALUES(DestructionPoints),
+    Morale = VALUES(Morale),
+    `Class` = VALUES(`Class`),
+    Movement = VALUES(Movement),
+    `Save` = VALUES(`Save`),
+    FA = VALUES(FA),
+    NumberOfTitanWeapons = VALUES(NumberOfTitanWeapons);
 
 INSERT INTO SpecialAbility (SpecialAbilityName, Description)
 SELECT n, d FROM (
@@ -144,16 +195,24 @@ The detachment must shoot at an enemy even if that enemy is engaged in an assaul
 If a detachment following an Instinct order uses a template weapon, centre the template over the closest enemy base.' AS d
     UNION ALL SELECT 'Semi-Synaptic' AS n, 'Detachments with this ability may receive orders normally, even while outside a Synapse radius.
 
-If they fail a Hive Mind Test, they act as Slave creatures and follow their listed Instinct.' AS d
+If they fail a Hive Mind Test, they act as Slave creatures and follow their listed Instinct.
+
+Bio-Titans have no Instinct. If they fail a Hive Mind Test, they do not follow an Instinct order.' AS d
     UNION ALL SELECT 'Semi-Synaptic (Hunt)' AS n, 'Detachments with this ability may receive orders normally, even while outside a Synapse radius.
 
-If they fail a Hive Mind Test, they act as Slave creatures and follow the Hunt Instinct.' AS d
+If they fail a Hive Mind Test, they act as Slave creatures and follow the Hunt Instinct.
+
+Bio-Titans have no Instinct. If they fail a Hive Mind Test, they do not follow an Instinct order.' AS d
     UNION ALL SELECT 'Semi-Synaptic (Devastation)' AS n, 'Detachments with this ability may receive orders normally, even while outside a Synapse radius.
 
-If they fail a Hive Mind Test, they act as Slave creatures and follow the Devastation Instinct.' AS d
+If they fail a Hive Mind Test, they act as Slave creatures and follow the Devastation Instinct.
+
+Bio-Titans have no Instinct. If they fail a Hive Mind Test, they do not follow an Instinct order.' AS d
     UNION ALL SELECT 'Semi-Synaptic (Nest)' AS n, 'Detachments with this ability may receive orders normally, even while outside a Synapse radius.
 
-If they fail a Hive Mind Test, they act as Slave creatures and follow the Nest Instinct.' AS d
+If they fail a Hive Mind Test, they act as Slave creatures and follow the Nest Instinct.
+
+Bio-Titans have no Instinct. If they fail a Hive Mind Test, they do not follow an Instinct order.' AS d
     UNION ALL SELECT 'Synaptic Overload' AS n, 'Once per turn, a base with this ability may cause a detachment within its Synapse radius to automatically pass a Hive Mind Test.
 
 The use of this ability must be declared before making the test.' AS d
@@ -168,20 +227,16 @@ During the Combat Phase, every base within 15 cm of the centre of the Bio-Titan 
  • On a 4+ if the Bio-Titan has an Advance or First Fire order.
  • On a 5+ if the Bio-Titan has a Charge or Forced March order.
 
-Spore Pods have AP 0 and possess the Reduces Cover (-3) and Bio-Toxin abilities.
+Spore Pods have AP 0 and possess the Reduces Cover (-3) and Bio-Toxin abilities. Purchasing Spore Pods increases the Bio-Titan''s Close Defences to 4+.
 
 Spore Pods function even if the Bio-Titan is pinned in an assault. In this case, resolve the Spore Pod attacks before resolving the assault. Any damage inflicted counts towards the assault''s combat result.
 
-Spore Pods do not suffer a To-Hit penalty when the Bio-Titan is engaged in an assault.
-
-Spore Pods increase the Bio-Titan''s Close Defences to 4+.' AS d
+Spore Pods do not suffer a To-Hit penalty when the Bio-Titan is engaged in an assault.' AS d
     UNION ALL SELECT 'Spore-Mine' AS n, 'When an attack is made with a Spore-Mines weapon, it creates a hazardous area in addition to resolving the normal effects of the attack.
 
 Leave the template in the position where the attack was resolved. It remains in play for the turn in which it was fired and for the following turn, after which it is removed.
 
-The area counts as Dangerous Terrain (4+/AP 0) with the Bio-Toxin ability.
-
-The Spore-Mine area may be targeted by shooting attacks. Each successful hit removes one Spore-Mine from the area.' AS d
+The area counts as Dangerous Terrain (4+/AP 0) with the Bio-Toxin ability.' AS d
     UNION ALL SELECT 'Mycetic Spore' AS n, 'Mycetic Spores follow these rules:
 
  • Spores are divided into groups. Each group consists of one or more detachments that purchased Mycetic Spores.
@@ -440,6 +495,7 @@ If two opposing bases both possess such weapons, the abilities cancel one anothe
  • Shooting: Damage (+1).
  • Entangle and Damage (+1) in Assault.
  • First Strike (1/2+/AP -4) and Damage (+1).' AS d
+    UNION ALL SELECT 'Rapid Digestion' AS n, 'If a base with this ability wins an assault duel against a Class 1 or 2 base, it recovers one lost Wound.' AS d
 ) AS src
 WHERE NOT EXISTS (
     SELECT 1 FROM SpecialAbility sa WHERE sa.SpecialAbilityName = src.n
@@ -487,16 +543,24 @@ The detachment must shoot at an enemy even if that enemy is engaged in an assaul
 If a detachment following an Instinct order uses a template weapon, centre the template over the closest enemy base.' AS d
     UNION ALL SELECT 'Semi-Synaptic' AS n, 'Detachments with this ability may receive orders normally, even while outside a Synapse radius.
 
-If they fail a Hive Mind Test, they act as Slave creatures and follow their listed Instinct.' AS d
+If they fail a Hive Mind Test, they act as Slave creatures and follow their listed Instinct.
+
+Bio-Titans have no Instinct. If they fail a Hive Mind Test, they do not follow an Instinct order.' AS d
     UNION ALL SELECT 'Semi-Synaptic (Hunt)' AS n, 'Detachments with this ability may receive orders normally, even while outside a Synapse radius.
 
-If they fail a Hive Mind Test, they act as Slave creatures and follow the Hunt Instinct.' AS d
+If they fail a Hive Mind Test, they act as Slave creatures and follow the Hunt Instinct.
+
+Bio-Titans have no Instinct. If they fail a Hive Mind Test, they do not follow an Instinct order.' AS d
     UNION ALL SELECT 'Semi-Synaptic (Devastation)' AS n, 'Detachments with this ability may receive orders normally, even while outside a Synapse radius.
 
-If they fail a Hive Mind Test, they act as Slave creatures and follow the Devastation Instinct.' AS d
+If they fail a Hive Mind Test, they act as Slave creatures and follow the Devastation Instinct.
+
+Bio-Titans have no Instinct. If they fail a Hive Mind Test, they do not follow an Instinct order.' AS d
     UNION ALL SELECT 'Semi-Synaptic (Nest)' AS n, 'Detachments with this ability may receive orders normally, even while outside a Synapse radius.
 
-If they fail a Hive Mind Test, they act as Slave creatures and follow the Nest Instinct.' AS d
+If they fail a Hive Mind Test, they act as Slave creatures and follow the Nest Instinct.
+
+Bio-Titans have no Instinct. If they fail a Hive Mind Test, they do not follow an Instinct order.' AS d
     UNION ALL SELECT 'Synaptic Overload' AS n, 'Once per turn, a base with this ability may cause a detachment within its Synapse radius to automatically pass a Hive Mind Test.
 
 The use of this ability must be declared before making the test.' AS d
@@ -511,20 +575,16 @@ During the Combat Phase, every base within 15 cm of the centre of the Bio-Titan 
  • On a 4+ if the Bio-Titan has an Advance or First Fire order.
  • On a 5+ if the Bio-Titan has a Charge or Forced March order.
 
-Spore Pods have AP 0 and possess the Reduces Cover (-3) and Bio-Toxin abilities.
+Spore Pods have AP 0 and possess the Reduces Cover (-3) and Bio-Toxin abilities. Purchasing Spore Pods increases the Bio-Titan''s Close Defences to 4+.
 
 Spore Pods function even if the Bio-Titan is pinned in an assault. In this case, resolve the Spore Pod attacks before resolving the assault. Any damage inflicted counts towards the assault''s combat result.
 
-Spore Pods do not suffer a To-Hit penalty when the Bio-Titan is engaged in an assault.
-
-Spore Pods increase the Bio-Titan''s Close Defences to 4+.' AS d
+Spore Pods do not suffer a To-Hit penalty when the Bio-Titan is engaged in an assault.' AS d
     UNION ALL SELECT 'Spore-Mine' AS n, 'When an attack is made with a Spore-Mines weapon, it creates a hazardous area in addition to resolving the normal effects of the attack.
 
 Leave the template in the position where the attack was resolved. It remains in play for the turn in which it was fired and for the following turn, after which it is removed.
 
-The area counts as Dangerous Terrain (4+/AP 0) with the Bio-Toxin ability.
-
-The Spore-Mine area may be targeted by shooting attacks. Each successful hit removes one Spore-Mine from the area.' AS d
+The area counts as Dangerous Terrain (4+/AP 0) with the Bio-Toxin ability.' AS d
     UNION ALL SELECT 'Mycetic Spore' AS n, 'Mycetic Spores follow these rules:
 
  • Spores are divided into groups. Each group consists of one or more detachments that purchased Mycetic Spores.
@@ -783,6 +843,7 @@ If two opposing bases both possess such weapons, the abilities cancel one anothe
  • Shooting: Damage (+1).
  • Entangle and Damage (+1) in Assault.
  • First Strike (1/2+/AP -4) and Damage (+1).' AS d
+    UNION ALL SELECT 'Rapid Digestion' AS n, 'If a base with this ability wins an assault duel against a Class 1 or 2 base, it recovers one lost Wound.' AS d
 ) AS src ON src.n = sa.SpecialAbilityName
 SET sa.Description = src.d;
 
@@ -794,9 +855,9 @@ SELECT n, d FROM (
     UNION ALL SELECT 'Warp Field' AS n, '[Movement Phase, upon activation]: The Dominatrix gains Protection (4+) for the remainder of the turn.' AS d
     UNION ALL SELECT 'Energy Torrent' AS n, '[Combat Phase, Shooting]: The Dominatrix focuses its psychic energy to destroy the enemy. Choose one of the two firing modes when it is activated.
 
-Energy Torrent -- Focused: 90 cm, 1 die, 3+, AP -4, 1D3 Hits.
+Energy Torrent -- Focused: 90 cm, 1 die, 3+, AP -3, Psychic Attack, Multiple Hits (1D3).
 
-Energy Torrent -- Diffuse: 90 cm, Template, 3+, AP -1, Template (7.5 cm), Reduces Cover (-1).' AS d
+Energy Torrent -- Diffuse: 90 cm, Template, 3+, AP -1, Psychic Attack, Template (7.5 cm), Reduces Cover (-1).' AS d
     UNION ALL SELECT 'Synaptic Beacon' AS n, '[Movement Phase, upon activation]: The Dominatrix extends the range of its Synapse radius to 60 cm for the remainder of the turn. In addition, during the End-of-Turn Effects, detachments acting on Instinct within 60 cm may attempt a Hive Mind Test. If successful, remove their Instinct counters.' AS d
 ) AS src
 WHERE NOT EXISTS (
@@ -811,9 +872,9 @@ INNER JOIN (
     UNION ALL SELECT 'Warp Field' AS n, '[Movement Phase, upon activation]: The Dominatrix gains Protection (4+) for the remainder of the turn.' AS d
     UNION ALL SELECT 'Energy Torrent' AS n, '[Combat Phase, Shooting]: The Dominatrix focuses its psychic energy to destroy the enemy. Choose one of the two firing modes when it is activated.
 
-Energy Torrent -- Focused: 90 cm, 1 die, 3+, AP -4, 1D3 Hits.
+Energy Torrent -- Focused: 90 cm, 1 die, 3+, AP -3, Psychic Attack, Multiple Hits (1D3).
 
-Energy Torrent -- Diffuse: 90 cm, Template, 3+, AP -1, Template (7.5 cm), Reduces Cover (-1).' AS d
+Energy Torrent -- Diffuse: 90 cm, Template, 3+, AP -1, Psychic Attack, Template (7.5 cm), Reduces Cover (-1).' AS d
     UNION ALL SELECT 'Synaptic Beacon' AS n, '[Movement Phase, upon activation]: The Dominatrix extends the range of its Synapse radius to 60 cm for the remainder of the turn. In addition, during the End-of-Turn Effects, detachments acting on Instinct within 60 cm may attempt a Hive Mind Test. If successful, remove their Instinct counters.' AS d
 ) AS src ON src.n = pp.PsychicPowerName
 SET pp.Description = src.d;
@@ -821,8 +882,6 @@ SET pp.Description = src.d;
 INSERT INTO SpecialRule (CodexId, SpecialRuleName, Description)
 SELECT @codexId, n, d FROM (
     SELECT 'Army Creation' AS n, 'Tyranids select their troops differently from other armies and do not follow the standard army-building rules. Instead, detachments of Synapse creatures generate Command Points, while other formations consume them.
-
-Before another Synapse Formation may be selected, all Command Points generated by the previously selected Synapse Formations must have been spent.
 
 Tyranid Titans are relatively rare. The army may include no more than one Tyranid Titan for every 5 Command Points generated.' AS d
     UNION ALL SELECT 'Morale' AS n, 'Tyranids are not affected by morale in the same manner as other armies and never make Morale Tests.
@@ -833,12 +892,14 @@ If the test is failed, the detachment follows its Instinct, as described by its 
 
 A detachment activated while it has an Instinct counter automatically removes the counter after completing its activation.
 
+If a test is failed during movement, the detachment finishes its movement and follows its Instinct during the Combat Phase.
+
 A detachment with an Instinct counter suffers a -1 AF penalty to represent its disorganisation.' AS d
     UNION ALL SELECT 'Adaptations' AS n, 'Tyranids excel at adapting to their opponents. To represent this, after seeing the opposing player''s army list but before the battle begins, the Tyranid player selects adaptations.
 
 Every Tyranid army has 10 points to spend on adaptations from the following list:
 
-Bio-Acid (7 points): For every complete 2,000 points in the army, one attack die from one weapon may gain Damage (+1) and improve its AP by 1. The use of this effect must be declared before making the To-Hit roll.
+Bio-Acid (5 points): For every complete 2,000 points in the army, one attack die from one weapon may gain Damage (+1) and improve its AP by 1. The use of this effect must be declared before making the To-Hit roll.
 
 Bio-Targeting (7 points): Every unit in the army may reroll results of 1 on its ranged To-Hit rolls.
 
@@ -878,12 +939,14 @@ Adrenaline Surge (1 point): For every complete 2,000 points in the army, increas
 | 4 | Head (front) / Abdomen (rear) |
 | 5 | Abdomen |
 | 6 | Player''s choice |' AS d
-    UNION ALL SELECT 'Tyranid Titan Damage Effects' AS n, '### Body
+    UNION ALL SELECT 'Tyranid Titan Damage Effects' AS n, 'Damage effects are progressive: the first damage to a location applies the first effect, and further damage applies the following effects on the list.
+
+### Body
 
 | Result | Effect |
 | --- | --- |
-| 1 | 1 additional point of damage |
-| 2 | 1 additional point of damage; reduce Regeneration by 1 |
+| 1 | 1 additional point of damage; reduce Regeneration by 1 |
+| 2 | 1 additional point of damage |
 | 3+ | 2 additional points of damage |
 
 ### Weapon
@@ -902,7 +965,7 @@ Adrenaline Surge (1 point): For every complete 2,000 points in the army, increas
 | 2 | Reduce the Titan''s base Movement by 5 cm (Repair on 4+). From this damage onward, the Titan falls if it is destroyed. |
 | 3 | Reduce the Titan''s base Movement by an additional 5 cm (Repair on 4+) |
 | 4 | Immobilised; 1 additional point of damage |
-| 5+ | Damage to the Body |
+| 6+ | Damage to the Body |
 
 ### Head
 
@@ -917,57 +980,11 @@ Adrenaline Surge (1 point): For every complete 2,000 points in the army, increas
 | Result | Effect |
 | --- | --- |
 | 1 | -1 AF; lose 1D3 transported bases |
-| 2 | -1 AF; 1 additional point of damage; lose 1D3 transported bases |
-| 3+ | -1 AF; damage to the Body; reduce Regeneration by 1; lose all transported bases |' AS d
+| 2 | -1 AF; lose 1D3 transported bases |
+| 3+ | -1 AF; damage to the Body; lose all transported bases |' AS d
 ) AS src;
 
--- Figure PNGs are stored in Base.Image; run upload_base_images.py after this seed.
-INSERT INTO `Base` (
-    CodexId, BaseName, DestructionPoints,
-    Morale, `Class`, Movement, `Save`, FA, NumberOfTitanWeapons
-) VALUES
-    (@codexId, 'Barbgaunt', 0, '6', 1, '10', '--', '+0', 0),
-    (@codexId, 'Hive Guard', 0, '6', 1, '10', '4+', '+2', 0),
-    (@codexId, 'Gargoyles', 0, '6', 1, '15', '--', '+1', 0),
-    (@codexId, 'Alpha Genestealer', 0, 'Attached', 1, '15', '5+f', '+8', 0),
-    (@codexId, 'Genestealers', 0, '5', 1, '15', '--', '+6', 0),
-    (@codexId, 'Tyranid Warriors', 0, '--', 1, '10', '4+', '+5', 0),
-    (@codexId, 'Hormagaunts', 0, '6', 1, '15', '--', '+2', 0),
-    (@codexId, 'Lictor', 0, '5', 1, '15', '5+', '+5', 0),
-    (@codexId, 'Termagants', 0, '6', 1, '15', '--', '+1', 0),
-    (@codexId, 'Rippers', 0, '6', 1, '10', '--', '-1', 0),
-    (@codexId, 'Raveners', 0, '6', 2, '20', '6+f', '+4', 0),
-    (@codexId, 'Carnifex', 0, '6', 2, '15', '3+', '+6', 0),
-    (@codexId, 'Winged Hive Tyrant', 0, '--', 2, '25', '3+', '+7', 0),
-    (@codexId, 'Hive Tyrant', 0, '--', 2, '15', '3+', '+6', 0),
-    (@codexId, 'Venomthrope', 0, '6', 2, '15', '4+', '+4', 0),
-    (@codexId, 'Zoanthrope', 0, '5', 2, '10', '5+', '+1', 0),
-    (@codexId, 'Biovore', 0, '6', 3, '15', '4+', '+0', 0),
-    (@codexId, 'Dactylis', 0, '6', 3, '15', '3+', '+1', 0),
-    (@codexId, 'Exocrine', 0, '6', 3, '15', '3+', '+1', 0),
-    (@codexId, 'Harpy', 0, '5', 3, '25', '3+', '+4', 0),
-    (@codexId, 'Haruspex', 0, '6', 3, '20', '2+', '+7', 0),
-    (@codexId, 'Malefactor', 0, 'Attached', 3, '20', '2+', '+5', 0),
-    (@codexId, 'Neurotyrant', 0, '--', 3, '20', '3+', '+2', 0),
-    (@codexId, 'Pyrovore', 0, '6', 3, '15', '4+', '+0', 0),
-    (@codexId, 'Mycetic Spore', 0, '--', 3, '0', '3+', '+0', 0),
-    (@codexId, 'Tervigon', 0, 'Attached', 3, '20', '2+', '+5', 0),
-    (@codexId, 'Toxicrene', 0, '6', 3, '20', '2+', '+5', 0),
-    (@codexId, 'Virago', 0, '5', 3, '25', '3+', '+6', 0),
-    (@codexId, 'Barbed Hierodule', 0, '5', 4, '20', '2+', '+10', 0),
-    (@codexId, 'Scythed Hierodule', 0, '5', 4, '20', '2+', '+12', 0),
-    (@codexId, 'Razorfex', 0, '5', 4, '20', '2+', '+9', 0),
-    (@codexId, 'Norn Queen', 0, '--', 4, '15', '2+', '+10', 0),
-    (@codexId, 'Dominatrix', 0, '--', 4, '15', '2+', '+10', 0),
-    (@codexId, 'Harridan', 0, '--', 4, '20', '2+', '+5', 0),
-    (@codexId, 'Trygon', 0, '--', 4, '15', '2+', '+7', 0),
-    (@codexId, 'Assault Tyrannofex', 0, '7', 4, '20', '2+', '+8', 0),
-    (@codexId, 'Support Tyrannofex', 0, '7', 4, '15', '2+', '+5', 0),
-    (@codexId, 'Alpha Hierodule', 0, '--', 5, '25', '2+ Chart', '+13', 2),
-    (@codexId, 'Hierophant', 0, '--', 6, '25', '2+ Chart', '+17', 3),
-    (@codexId, 'Bio-Plasma Shot', 0, '--', 0, '--', '--', '--', 0),
-    (@codexId, 'Spore-Mine Shot', 0, '--', 0, '--', '--', '--', 0);
-
+-- Figure PNGs are stored in Base.Image; run upload_base_images.py for new units.
 SET @barbgaunt := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Barbgaunt');
 SET @hiveGuard := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Hive Guard');
 SET @gargoyles := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Gargoyles');
@@ -996,6 +1013,7 @@ SET @myceticSpore := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND Bas
 SET @tervigon := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Tervigon');
 SET @toxicrene := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Toxicrene');
 SET @virago := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Virago');
+SET @dimachaeron := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Dimachaeron');
 SET @barbedHierodule := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Barbed Hierodule');
 SET @scythedHierodule := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Scythed Hierodule');
 SET @razorfex := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Razorfex');
@@ -1026,9 +1044,9 @@ INSERT INTO Weapon (
     (@raveners, 'Devourer', '20 cm', '2', '5+', '-1', 0),
     (@carnifex, 'Bio-Plasma', '30 cm', '1', '4+', '-2', 0),
     (@wingedHiveTyrant, 'Devourer', '20 cm', '2', '5+', '-1', 0),
-    (@hiveTyrant, 'Heavy Venom Cannon', '45 cm', '2', '4+', '-1', 0),
+    (@hiveTyrant, 'Deathspitter', '45 cm', '2', '4+', '-1', 0),
     (@venomthrope, 'Spore Nest', '--', '--', '--', '--', 0),
-    (@zoanthrope, 'Warp Blast', '60 cm', '1', '4+', 'Psy', 0),
+    (@zoanthrope, 'Warp Blast', '60 cm', '1', '5+', 'Psy', 0),
     (@biovore, 'Spore-Mines', '90 cm', 'Template', '4+', '-1', 0),
     (@dactylis, 'Bile Pods -- Spores', '90 cm', '2', '3+', '0', 0),
     (@dactylis, 'Bile Pods -- Bio-Acid', '90 cm', '2', '4+', '-2', 0),
@@ -1042,14 +1060,13 @@ INSERT INTO Weapon (
     (@tervigon, 'Fragmentation Spines', '20 cm', '2', '5+', '0', 0),
     (@toxicrene, 'Spore Nest', '--', '--', '--', '--', 0),
     (@virago, 'Salivary Cannon', '20 cm', '2', '4+', '0', 0),
+    (@dimachaeron, 'Slashing Claws', '--', '--', '--', '--', 0),
     (@barbedHierodule, 'Bio-Cannons', '75 cm', '2', '3+', '-3', 0),
     (@barbedHierodule, 'Fragmentation Spines', '20 cm', '5', '5+', '0', 0),
     (@scythedHierodule, 'Pyro-Acid Jet', '0 cm', 'Template', '4+', '-1', 0),
     (@razorfex, 'Bio-Plasma', '30 cm', '1', '3+', '-2', 0),
     (@nornQueen, 'Venom Cannon', '45 cm', '2', '4+', '-2', 0),
     (@dominatrix, 'Bio-Plasma Cannons', '75 cm', '4', '4+', '-3', 0),
-    (@dominatrix, 'Energy Torrent -- Focused', '90 cm', '1', '3+', '-4', 0),
-    (@dominatrix, 'Energy Torrent -- Diffuse', '90 cm', 'Template', '3+', '-1', 0),
     (@harridan, 'Bio-Cannon', '45 cm', '3', '4+', '-2', 0),
     (@harridan, 'Spore Cloud', 'Bomb', 'Template', '2+', '0', 0),
     (@trygon, 'Bio-Shock', '20 cm', '3', '3+', '-2', 0),
@@ -1060,8 +1077,8 @@ INSERT INTO Weapon (
     (@alphaHierodule, 'Fragmentation Spines', '20 cm', '2', '4+', '0', 0),
     (@alphaHierodule, 'Bio-Cannon', '75 cm', '2', '4+', '-3', 1),
     (@alphaHierodule, 'Spore Pods', '0 cm', 'Template', '4+', '0', 1),
-    (@alphaHierodule, 'Bile Spitter -- Focused', '60 cm', '3', '3+', '-2', 1),
-    (@alphaHierodule, 'Bile Spitter -- Diffuse', '60 cm', 'Template', '4+', '0', 1),
+    (@alphaHierodule, 'Bile Spitter -- Focused', '45 cm', '3', '3+', '-2', 1),
+    (@alphaHierodule, 'Bile Spitter -- Diffuse', '45 cm', 'Template', '4+', '0', 1),
     (@alphaHierodule, 'Spine Clusters', '30 cm', 'Template', '3+', '-2', 1),
     (@alphaHierodule, 'Pyro-Acid Jet', '0 cm', 'Template', '4+', '-1', 1),
     (@alphaHierodule, 'Razor Claws', '45 cm', '5', '4+', '0', 1),
@@ -1070,8 +1087,8 @@ INSERT INTO Weapon (
     (@hierophant, 'Fragmentation Spines', '20 cm', '3', '4+', '0', 0),
     (@hierophant, 'Bio-Cannon', '75 cm', '2', '4+', '-3', 1),
     (@hierophant, 'Spore Pods', '0 cm', 'Template', '4+', '0', 1),
-    (@hierophant, 'Bile Spitter -- Focused', '60 cm', '3', '3+', '-2', 1),
-    (@hierophant, 'Bile Spitter -- Diffuse', '60 cm', 'Template', '4+', '0', 1),
+    (@hierophant, 'Bile Spitter -- Focused', '45 cm', '3', '3+', '-2', 1),
+    (@hierophant, 'Bile Spitter -- Diffuse', '45 cm', 'Template', '4+', '0', 1),
     (@hierophant, 'Spine Clusters', '30 cm', 'Template', '3+', '-2', 1),
     (@hierophant, 'Pyro-Acid Jet', '0 cm', 'Template', '4+', '-1', 1),
     (@hierophant, 'Razor Claws', '45 cm', '5', '4+', '0', 1),
@@ -1168,6 +1185,12 @@ FROM (
     UNION ALL SELECT @virago AS BaseId, 'Interceptor' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @virago AS BaseId, 'Floater' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @virago AS BaseId, 'Semi-Synaptic (Devastation)' AS AbilityName, '' AS AbilityValue
+    UNION ALL SELECT @dimachaeron AS BaseId, 'Wounds (X)' AS AbilityName, '2' AS AbilityValue
+    UNION ALL SELECT @dimachaeron AS BaseId, 'Fear' AS AbilityName, '' AS AbilityValue
+    UNION ALL SELECT @dimachaeron AS BaseId, 'Close Defences (X+)' AS AbilityName, '5' AS AbilityValue
+    UNION ALL SELECT @dimachaeron AS BaseId, 'Regeneration (X+)' AS AbilityName, '5' AS AbilityValue
+    UNION ALL SELECT @dimachaeron AS BaseId, 'Semi-Synaptic (Devastation)' AS AbilityName, '' AS AbilityValue
+    UNION ALL SELECT @dimachaeron AS BaseId, 'Rapid Digestion' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @barbedHierodule AS BaseId, 'Terror' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @barbedHierodule AS BaseId, 'Close Defences (X+)' AS AbilityName, '5' AS AbilityValue
     UNION ALL SELECT @barbedHierodule AS BaseId, 'Regeneration (X+)' AS AbilityName, '5' AS AbilityValue
@@ -1210,7 +1233,7 @@ FROM (
     UNION ALL SELECT @harridan AS BaseId, 'Regeneration (X+)' AS AbilityName, '5' AS AbilityValue
     UNION ALL SELECT @harridan AS BaseId, 'Synapse (X)' AS AbilityName, '20 cm' AS AbilityValue
     UNION ALL SELECT @harridan AS BaseId, 'Wounds (X)' AS AbilityName, '3' AS AbilityValue
-    UNION ALL SELECT @harridan AS BaseId, 'Transport (X Gargoyles)' AS AbilityName, '5' AS AbilityValue
+    UNION ALL SELECT @harridan AS BaseId, 'Transport (X Gargoyles)' AS AbilityName, '10' AS AbilityValue
     UNION ALL SELECT @harridan AS BaseId, 'Infiltration' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @trygon AS BaseId, 'Character' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @trygon AS BaseId, 'Integral Armour' AS AbilityName, '' AS AbilityValue
@@ -1234,7 +1257,7 @@ FROM (
     UNION ALL SELECT @alphaHierodule AS BaseId, 'Wounds (X)' AS AbilityName, '6' AS AbilityValue
     UNION ALL SELECT @alphaHierodule AS BaseId, 'Terror' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @alphaHierodule AS BaseId, 'Close Defences (X+)' AS AbilityName, '5' AS AbilityValue
-    UNION ALL SELECT @alphaHierodule AS BaseId, 'Regeneration (X+)' AS AbilityName, '4' AS AbilityValue
+    UNION ALL SELECT @alphaHierodule AS BaseId, 'Regeneration (X+)' AS AbilityName, '5' AS AbilityValue
     UNION ALL SELECT @alphaHierodule AS BaseId, 'Agile' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @alphaHierodule AS BaseId, 'Semi-Synaptic' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @alphaHierodule AS BaseId, 'Damage (+X) in Assault' AS AbilityName, '2' AS AbilityValue
@@ -1242,7 +1265,7 @@ FROM (
     UNION ALL SELECT @hierophant AS BaseId, 'Wounds (X)' AS AbilityName, '9' AS AbilityValue
     UNION ALL SELECT @hierophant AS BaseId, 'Terror' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @hierophant AS BaseId, 'Close Defences (X+)' AS AbilityName, '5' AS AbilityValue
-    UNION ALL SELECT @hierophant AS BaseId, 'Regeneration (X+)' AS AbilityName, '4' AS AbilityValue
+    UNION ALL SELECT @hierophant AS BaseId, 'Regeneration (X+)' AS AbilityName, '5' AS AbilityValue
     UNION ALL SELECT @hierophant AS BaseId, 'Agile' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @hierophant AS BaseId, 'Semi-Synaptic' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @hierophant AS BaseId, 'Transport (X)' AS AbilityName, '5' AS AbilityValue
@@ -1292,10 +1315,6 @@ FROM (
     UNION ALL SELECT @scythedHierodule AS BaseId, 'Pyro-Acid Jet' AS WeaponName, 'Flame Template' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @scythedHierodule AS BaseId, 'Pyro-Acid Jet' AS WeaponName, 'Reduces Cover (X)' AS AbilityName, '-3' AS AbilityValue
     UNION ALL SELECT @dominatrix AS BaseId, 'Bio-Plasma Cannons' AS WeaponName, 'Turret' AS AbilityName, '' AS AbilityValue
-    UNION ALL SELECT @dominatrix AS BaseId, 'Energy Torrent -- Focused' AS WeaponName, 'Psychic Attack' AS AbilityName, '' AS AbilityValue
-    UNION ALL SELECT @dominatrix AS BaseId, 'Energy Torrent -- Diffuse' AS WeaponName, 'Psychic Attack' AS AbilityName, '' AS AbilityValue
-    UNION ALL SELECT @dominatrix AS BaseId, 'Energy Torrent -- Diffuse' AS WeaponName, 'Template (X)' AS AbilityName, '7.5 cm' AS AbilityValue
-    UNION ALL SELECT @dominatrix AS BaseId, 'Energy Torrent -- Diffuse' AS WeaponName, 'Reduces Cover (X)' AS AbilityName, '-1' AS AbilityValue
     UNION ALL SELECT @harridan AS BaseId, 'Spore Cloud' AS WeaponName, 'Template (X)' AS AbilityName, '7.5 cm' AS AbilityValue
     UNION ALL SELECT @harridan AS BaseId, 'Spore Cloud' AS WeaponName, 'Bio-Toxin' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @harridan AS BaseId, 'Spore Cloud' AS WeaponName, 'Bombardment (X)' AS AbilityName, '1' AS AbilityValue
@@ -1314,6 +1333,7 @@ FROM (
     UNION ALL SELECT @alphaHierodule AS BaseId, 'Pyro-Acid Jet' AS WeaponName, 'Reduces Cover (X)' AS AbilityName, '-3' AS AbilityValue
     UNION ALL SELECT @alphaHierodule AS BaseId, 'Razor Claws' AS WeaponName, 'Razor Claws' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @alphaHierodule AS BaseId, 'Tentacles' AS WeaponName, 'Tentacles' AS AbilityName, '' AS AbilityValue
+    UNION ALL SELECT @alphaHierodule AS BaseId, 'Tentacles' AS WeaponName, 'Damage (+X)' AS AbilityName, '1' AS AbilityValue
     UNION ALL SELECT @hierophant AS BaseId, 'Bio-Cannon' AS WeaponName, 'Damage (+X)' AS AbilityName, '1' AS AbilityValue
     UNION ALL SELECT @hierophant AS BaseId, 'Spore Pods' AS WeaponName, 'Reduces Cover (X)' AS AbilityName, '-3' AS AbilityValue
     UNION ALL SELECT @hierophant AS BaseId, 'Spore Pods' AS WeaponName, 'Bio-Toxin' AS AbilityName, '' AS AbilityValue
@@ -1327,6 +1347,7 @@ FROM (
     UNION ALL SELECT @hierophant AS BaseId, 'Pyro-Acid Jet' AS WeaponName, 'Reduces Cover (X)' AS AbilityName, '-3' AS AbilityValue
     UNION ALL SELECT @hierophant AS BaseId, 'Razor Claws' AS WeaponName, 'Razor Claws' AS AbilityName, '' AS AbilityValue
     UNION ALL SELECT @hierophant AS BaseId, 'Tentacles' AS WeaponName, 'Tentacles' AS AbilityName, '' AS AbilityValue
+    UNION ALL SELECT @hierophant AS BaseId, 'Tentacles' AS WeaponName, 'Damage (+X)' AS AbilityName, '1' AS AbilityValue
     UNION ALL SELECT @bioPlasmaShot AS BaseId, 'Bio-Plasma' AS WeaponName, 'Template (X)' AS AbilityName, '7.5 cm' AS AbilityValue
     UNION ALL SELECT @bioPlasmaShot AS BaseId, 'Bio-Plasma' AS WeaponName, 'Reduces Cover (X)' AS AbilityName, '-3' AS AbilityValue
     UNION ALL SELECT @sporeMineShot AS BaseId, 'Spore-Mines' AS WeaponName, 'Template (X)' AS AbilityName, '12 cm' AS AbilityValue
@@ -1353,4 +1374,208 @@ ON DUPLICATE KEY UPDATE
     Notes = VALUES(Notes),
     IsAssault = VALUES(IsAssault),
     LimitPerTitan = VALUES(LimitPerTitan);
+
+INSERT INTO Detachment (
+    CodexId, DetachmentName, CommandPoints, `Class`
+) VALUES
+    (@codexId, 'Dominatrix Detachment', 6, 4),
+    (@codexId, 'Alpha Genestealer', 1, 1),
+    (@codexId, 'Tyranid Warrior Detachment', 3, 1),
+    (@codexId, 'Harridan Detachment', 1, 4),
+    (@codexId, 'Neurotyrant Detachment', 1, 3),
+    (@codexId, 'Winged Hive Tyrant Detachment', 3, 2),
+    (@codexId, 'Hive Tyrant Detachment', 3, 2),
+    (@codexId, 'Norn Queen Detachment', 3, 4),
+    (@codexId, 'Trygon Detachment', 1, 4),
+    (@codexId, 'Barbgaunt Detachment', -1, 1),
+    (@codexId, 'Hive Guard Detachment', -1, 1),
+    (@codexId, 'Gargoyle Detachment', -1, 1),
+    (@codexId, 'Genestealer Detachment', -1, 1),
+    (@codexId, 'Hormagaunt Detachment', -1, 1),
+    (@codexId, 'Lictor Detachment', -1, 1),
+    (@codexId, 'Termagant Detachment', -1, 1),
+    (@codexId, 'Ripper Detachment', -1, 1),
+    (@codexId, 'Ravener Detachment', -1, 2),
+    (@codexId, 'Carnifex Detachment', -1, 2),
+    (@codexId, 'Venomthrope Detachment', -1, 2),
+    (@codexId, 'Zoanthrope Detachment', -1, 2),
+    (@codexId, 'Biovore Detachment', -1, 3),
+    (@codexId, 'Dactylis Detachment', -1, 3),
+    (@codexId, 'Exocrine Detachment', -1, 3),
+    (@codexId, 'Harpy Detachment', -1, 3),
+    (@codexId, 'Haruspex Detachment', -1, 3),
+    (@codexId, 'Pyrovore Detachment', -1, 3),
+    (@codexId, 'Toxicrene Detachment', -1, 3),
+    (@codexId, 'Virago Detachment', -1, 3),
+    (@codexId, 'Dimachaeron Detachment', -1, 4),
+    (@codexId, 'Barbed Hierodule Detachment', -2, 4),
+    (@codexId, 'Scythed Hierodule Detachment', -2, 4),
+    (@codexId, 'Razorfex Detachment', -1, 4),
+    (@codexId, 'Assault Tyrannofex Detachment', -1, 4),
+    (@codexId, 'Support Tyrannofex Detachment', -1, 4),
+    (@codexId, 'Alpha Hierodule Detachment', -2, 5),
+    (@codexId, 'Hierophant Detachment', -2, 6),
+    (@codexId, 'Malefactor Detachment', -1, 3),
+    (@codexId, 'Mycetic Spore Detachment', 0, 3),
+    (@codexId, 'Tervigon Detachment', -1, 3),
+    (@codexId, 'Off-Table Artillery (Bio-Plasma)', -1, 0),
+    (@codexId, 'Off-Table Artillery (Spore-Mine)', -1, 0)
+ON DUPLICATE KEY UPDATE
+    CommandPoints = VALUES(CommandPoints),
+    `Class` = VALUES(`Class`);
+
+INSERT INTO DetachmentComposition (DetachmentId, BaseId, BaseCount)
+SELECT d.DetachmentId, b.BaseId, src.BaseCount
+FROM (
+    SELECT 'Dominatrix Detachment' AS DetachmentName, 'Dominatrix' AS UnitName, 1 AS BaseCount
+    UNION ALL SELECT 'Alpha Genestealer' AS DetachmentName, 'Alpha Genestealer' AS UnitName, 1 AS BaseCount
+    UNION ALL SELECT 'Tyranid Warrior Detachment' AS DetachmentName, 'Tyranid Warriors' AS UnitName, 4 AS BaseCount
+    UNION ALL SELECT 'Harridan Detachment' AS DetachmentName, 'Harridan' AS UnitName, 1 AS BaseCount
+    UNION ALL SELECT 'Neurotyrant Detachment' AS DetachmentName, 'Neurotyrant' AS UnitName, 3 AS BaseCount
+    UNION ALL SELECT 'Winged Hive Tyrant Detachment' AS DetachmentName, 'Winged Hive Tyrant' AS UnitName, 3 AS BaseCount
+    UNION ALL SELECT 'Hive Tyrant Detachment' AS DetachmentName, 'Hive Tyrant' AS UnitName, 3 AS BaseCount
+    UNION ALL SELECT 'Norn Queen Detachment' AS DetachmentName, 'Norn Queen' AS UnitName, 1 AS BaseCount
+    UNION ALL SELECT 'Trygon Detachment' AS DetachmentName, 'Trygon' AS UnitName, 1 AS BaseCount
+    UNION ALL SELECT 'Barbgaunt Detachment' AS DetachmentName, 'Barbgaunt' AS UnitName, 5 AS BaseCount
+    UNION ALL SELECT 'Hive Guard Detachment' AS DetachmentName, 'Hive Guard' AS UnitName, 5 AS BaseCount
+    UNION ALL SELECT 'Gargoyle Detachment' AS DetachmentName, 'Gargoyles' AS UnitName, 5 AS BaseCount
+    UNION ALL SELECT 'Genestealer Detachment' AS DetachmentName, 'Genestealers' AS UnitName, 5 AS BaseCount
+    UNION ALL SELECT 'Hormagaunt Detachment' AS DetachmentName, 'Hormagaunts' AS UnitName, 5 AS BaseCount
+    UNION ALL SELECT 'Lictor Detachment' AS DetachmentName, 'Lictor' AS UnitName, 5 AS BaseCount
+    UNION ALL SELECT 'Termagant Detachment' AS DetachmentName, 'Termagants' AS UnitName, 10 AS BaseCount
+    UNION ALL SELECT 'Ripper Detachment' AS DetachmentName, 'Rippers' AS UnitName, 10 AS BaseCount
+    UNION ALL SELECT 'Ravener Detachment' AS DetachmentName, 'Raveners' AS UnitName, 5 AS BaseCount
+    UNION ALL SELECT 'Carnifex Detachment' AS DetachmentName, 'Carnifex' AS UnitName, 3 AS BaseCount
+    UNION ALL SELECT 'Venomthrope Detachment' AS DetachmentName, 'Venomthrope' AS UnitName, 3 AS BaseCount
+    UNION ALL SELECT 'Zoanthrope Detachment' AS DetachmentName, 'Zoanthrope' AS UnitName, 3 AS BaseCount
+    UNION ALL SELECT 'Biovore Detachment' AS DetachmentName, 'Biovore' AS UnitName, 3 AS BaseCount
+    UNION ALL SELECT 'Dactylis Detachment' AS DetachmentName, 'Dactylis' AS UnitName, 3 AS BaseCount
+    UNION ALL SELECT 'Exocrine Detachment' AS DetachmentName, 'Exocrine' AS UnitName, 3 AS BaseCount
+    UNION ALL SELECT 'Harpy Detachment' AS DetachmentName, 'Harpy' AS UnitName, 3 AS BaseCount
+    UNION ALL SELECT 'Haruspex Detachment' AS DetachmentName, 'Haruspex' AS UnitName, 3 AS BaseCount
+    UNION ALL SELECT 'Pyrovore Detachment' AS DetachmentName, 'Pyrovore' AS UnitName, 3 AS BaseCount
+    UNION ALL SELECT 'Toxicrene Detachment' AS DetachmentName, 'Toxicrene' AS UnitName, 3 AS BaseCount
+    UNION ALL SELECT 'Virago Detachment' AS DetachmentName, 'Virago' AS UnitName, 3 AS BaseCount
+    UNION ALL SELECT 'Dimachaeron Detachment' AS DetachmentName, 'Dimachaeron' AS UnitName, 3 AS BaseCount
+    UNION ALL SELECT 'Barbed Hierodule Detachment' AS DetachmentName, 'Barbed Hierodule' AS UnitName, 1 AS BaseCount
+    UNION ALL SELECT 'Scythed Hierodule Detachment' AS DetachmentName, 'Scythed Hierodule' AS UnitName, 1 AS BaseCount
+    UNION ALL SELECT 'Razorfex Detachment' AS DetachmentName, 'Razorfex' AS UnitName, 3 AS BaseCount
+    UNION ALL SELECT 'Assault Tyrannofex Detachment' AS DetachmentName, 'Assault Tyrannofex' AS UnitName, 1 AS BaseCount
+    UNION ALL SELECT 'Support Tyrannofex Detachment' AS DetachmentName, 'Support Tyrannofex' AS UnitName, 1 AS BaseCount
+    UNION ALL SELECT 'Alpha Hierodule Detachment' AS DetachmentName, 'Alpha Hierodule' AS UnitName, 1 AS BaseCount
+    UNION ALL SELECT 'Hierophant Detachment' AS DetachmentName, 'Hierophant' AS UnitName, 1 AS BaseCount
+    UNION ALL SELECT 'Malefactor Detachment' AS DetachmentName, 'Malefactor' AS UnitName, 3 AS BaseCount
+    UNION ALL SELECT 'Mycetic Spore Detachment' AS DetachmentName, 'Mycetic Spore' AS UnitName, 1 AS BaseCount
+    UNION ALL SELECT 'Tervigon Detachment' AS DetachmentName, 'Tervigon' AS UnitName, 3 AS BaseCount
+    UNION ALL SELECT 'Off-Table Artillery (Bio-Plasma)' AS DetachmentName, 'Bio-Plasma Shot' AS UnitName, 1 AS BaseCount
+    UNION ALL SELECT 'Off-Table Artillery (Spore-Mine)' AS DetachmentName, 'Spore-Mine Shot' AS UnitName, 1 AS BaseCount
+) AS src
+INNER JOIN Detachment d
+    ON d.CodexId = @codexId AND d.DetachmentName = src.DetachmentName
+INNER JOIN `Base` b
+    ON b.CodexId = @codexId AND b.BaseName = src.UnitName;
+
+INSERT INTO Formation (
+    CodexId, FormationKindId, FormationName, PointsCost, CommandPoints, Contents,
+    DestructionPoints
+) VALUES
+    (@codexId, 7, 'Dominatrix Detachment', 400, 6, '1 Dominatrix base (Limit: one per 3,000 points)', 0),
+    (@codexId, 5, 'Alpha Genestealer', 50, 1, '1 Alpha Genestealer base (May only be attached to Genestealers)', 0),
+    (@codexId, 7, 'Tyranid Warrior Detachment', 225, 3, '4 Tyranid Warrior bases', 0),
+    (@codexId, 7, 'Harridan Detachment', 225, 1, '1 Harridan base', 0),
+    (@codexId, 7, 'Neurotyrant Detachment', 175, 1, '3 Neurotyrant bases', 0),
+    (@codexId, 7, 'Winged Hive Tyrant Detachment', 250, 3, '3 Winged Hive Tyrant bases', 0),
+    (@codexId, 7, 'Hive Tyrant Detachment', 250, 3, '3 Hive Tyrant bases', 0),
+    (@codexId, 7, 'Norn Queen Detachment', 275, 3, '1 Norn Queen base', 0),
+    (@codexId, 7, 'Trygon Detachment', 200, 1, '1 Trygon base', 0),
+    (@codexId, 8, 'Barbgaunt Detachment', 200, -1, '5 Barbgaunt bases', 0),
+    (@codexId, 8, 'Hive Guard Detachment', 200, -1, '5 Hive Guard bases', 0),
+    (@codexId, 8, 'Gargoyle Detachment', 200, -1, '5 Gargoyle bases', 0),
+    (@codexId, 8, 'Genestealer Detachment', 200, -1, '5 Genestealer bases', 0),
+    (@codexId, 8, 'Hormagaunt Detachment', 175, -1, '5 Hormagaunt bases', 0),
+    (@codexId, 8, 'Lictor Detachment', 225, -1, '5 Lictor bases', 0),
+    (@codexId, 8, 'Termagant Detachment', 175, -1, '10 Termagant bases', 0),
+    (@codexId, 8, 'Ripper Detachment', 100, -1, '10 Ripper bases', 0),
+    (@codexId, 8, 'Ravener Detachment', 200, -1, '5 Ravener bases', 0),
+    (@codexId, 8, 'Carnifex Detachment', 175, -1, '3 Carnifex bases', 0),
+    (@codexId, 8, 'Venomthrope Detachment', 100, -1, '3 Venomthrope bases', 0),
+    (@codexId, 8, 'Zoanthrope Detachment', 150, -1, '3 Zoanthrope bases', 0),
+    (@codexId, 8, 'Biovore Detachment', 225, -1, '3 Biovore bases', 0),
+    (@codexId, 8, 'Dactylis Detachment', 250, -1, '3 Dactylis bases', 0),
+    (@codexId, 8, 'Exocrine Detachment', 225, -1, '3 Exocrine bases', 0),
+    (@codexId, 8, 'Harpy Detachment', 225, -1, '3 Harpy bases', 0),
+    (@codexId, 8, 'Haruspex Detachment', 175, -1, '3 Haruspex bases', 0),
+    (@codexId, 8, 'Pyrovore Detachment', 125, -1, '3 Pyrovore bases', 0),
+    (@codexId, 8, 'Toxicrene Detachment', 150, -1, '3 Toxicrene bases', 0),
+    (@codexId, 8, 'Virago Detachment', 200, -1, '3 Virago bases', 0),
+    (@codexId, 8, 'Dimachaeron Detachment', 275, -1, '3 Dimachaeron bases', 0),
+    (@codexId, 8, 'Barbed Hierodule Detachment', 300, -2, '1 Barbed Hierodule base', 0),
+    (@codexId, 8, 'Scythed Hierodule Detachment', 250, -2, '1 Scythed Hierodule base', 0),
+    (@codexId, 8, 'Razorfex Detachment', 300, -1, '3 Razorfex bases', 0),
+    (@codexId, 8, 'Assault Tyrannofex Detachment', 200, -1, '1 Assault Tyrannofex base', 0),
+    (@codexId, 8, 'Support Tyrannofex Detachment', 200, -1, '1 Support Tyrannofex base', 0),
+    (@codexId, 8, 'Alpha Hierodule Detachment', 325, -2, '1 Alpha Hierodule base (2 weapons must be purchased)', 0),
+    (@codexId, 8, 'Hierophant Detachment', 425, -2, '1 Hierophant base (3 weapons must be purchased)', 0),
+    (@codexId, 5, 'Malefactor Detachment', 125, -1, '3 Malefactor bases', 0),
+    (@codexId, 5, 'Mycetic Spore Detachment', 50, 0, 'Enough Mycetic Spores to transport one Class 1 or 2 detachment', 0),
+    (@codexId, 5, 'Tervigon Detachment', 125, -1, '3 Tervigon bases', 0),
+    (@codexId, 6, 'Off-Table Artillery (Bio-Plasma)', 100, -1, '1 Bio-Plasma Shot (Limit: 1 per 2,000 points)', 0),
+    (@codexId, 6, 'Off-Table Artillery (Spore-Mine)', 100, -1, '1 Spore-Mine Shot (Limit: 1 per 2,000 points)', 0)
+ON DUPLICATE KEY UPDATE
+    FormationKindId = VALUES(FormationKindId),
+    PointsCost = VALUES(PointsCost),
+    CommandPoints = VALUES(CommandPoints),
+    Contents = VALUES(Contents),
+    DestructionPoints = VALUES(DestructionPoints);
+
+INSERT INTO FormationDetachment (FormationId, DetachmentId, Quantity)
+SELECT f.FormationId, d.DetachmentId, 1
+FROM (
+    SELECT 'Dominatrix Detachment' AS FormationName, 'Dominatrix Detachment' AS DetachmentName
+    UNION ALL SELECT 'Alpha Genestealer' AS FormationName, 'Alpha Genestealer' AS DetachmentName
+    UNION ALL SELECT 'Tyranid Warrior Detachment' AS FormationName, 'Tyranid Warrior Detachment' AS DetachmentName
+    UNION ALL SELECT 'Harridan Detachment' AS FormationName, 'Harridan Detachment' AS DetachmentName
+    UNION ALL SELECT 'Neurotyrant Detachment' AS FormationName, 'Neurotyrant Detachment' AS DetachmentName
+    UNION ALL SELECT 'Winged Hive Tyrant Detachment' AS FormationName, 'Winged Hive Tyrant Detachment' AS DetachmentName
+    UNION ALL SELECT 'Hive Tyrant Detachment' AS FormationName, 'Hive Tyrant Detachment' AS DetachmentName
+    UNION ALL SELECT 'Norn Queen Detachment' AS FormationName, 'Norn Queen Detachment' AS DetachmentName
+    UNION ALL SELECT 'Trygon Detachment' AS FormationName, 'Trygon Detachment' AS DetachmentName
+    UNION ALL SELECT 'Barbgaunt Detachment' AS FormationName, 'Barbgaunt Detachment' AS DetachmentName
+    UNION ALL SELECT 'Hive Guard Detachment' AS FormationName, 'Hive Guard Detachment' AS DetachmentName
+    UNION ALL SELECT 'Gargoyle Detachment' AS FormationName, 'Gargoyle Detachment' AS DetachmentName
+    UNION ALL SELECT 'Genestealer Detachment' AS FormationName, 'Genestealer Detachment' AS DetachmentName
+    UNION ALL SELECT 'Hormagaunt Detachment' AS FormationName, 'Hormagaunt Detachment' AS DetachmentName
+    UNION ALL SELECT 'Lictor Detachment' AS FormationName, 'Lictor Detachment' AS DetachmentName
+    UNION ALL SELECT 'Termagant Detachment' AS FormationName, 'Termagant Detachment' AS DetachmentName
+    UNION ALL SELECT 'Ripper Detachment' AS FormationName, 'Ripper Detachment' AS DetachmentName
+    UNION ALL SELECT 'Ravener Detachment' AS FormationName, 'Ravener Detachment' AS DetachmentName
+    UNION ALL SELECT 'Carnifex Detachment' AS FormationName, 'Carnifex Detachment' AS DetachmentName
+    UNION ALL SELECT 'Venomthrope Detachment' AS FormationName, 'Venomthrope Detachment' AS DetachmentName
+    UNION ALL SELECT 'Zoanthrope Detachment' AS FormationName, 'Zoanthrope Detachment' AS DetachmentName
+    UNION ALL SELECT 'Biovore Detachment' AS FormationName, 'Biovore Detachment' AS DetachmentName
+    UNION ALL SELECT 'Dactylis Detachment' AS FormationName, 'Dactylis Detachment' AS DetachmentName
+    UNION ALL SELECT 'Exocrine Detachment' AS FormationName, 'Exocrine Detachment' AS DetachmentName
+    UNION ALL SELECT 'Harpy Detachment' AS FormationName, 'Harpy Detachment' AS DetachmentName
+    UNION ALL SELECT 'Haruspex Detachment' AS FormationName, 'Haruspex Detachment' AS DetachmentName
+    UNION ALL SELECT 'Pyrovore Detachment' AS FormationName, 'Pyrovore Detachment' AS DetachmentName
+    UNION ALL SELECT 'Toxicrene Detachment' AS FormationName, 'Toxicrene Detachment' AS DetachmentName
+    UNION ALL SELECT 'Virago Detachment' AS FormationName, 'Virago Detachment' AS DetachmentName
+    UNION ALL SELECT 'Dimachaeron Detachment' AS FormationName, 'Dimachaeron Detachment' AS DetachmentName
+    UNION ALL SELECT 'Barbed Hierodule Detachment' AS FormationName, 'Barbed Hierodule Detachment' AS DetachmentName
+    UNION ALL SELECT 'Scythed Hierodule Detachment' AS FormationName, 'Scythed Hierodule Detachment' AS DetachmentName
+    UNION ALL SELECT 'Razorfex Detachment' AS FormationName, 'Razorfex Detachment' AS DetachmentName
+    UNION ALL SELECT 'Assault Tyrannofex Detachment' AS FormationName, 'Assault Tyrannofex Detachment' AS DetachmentName
+    UNION ALL SELECT 'Support Tyrannofex Detachment' AS FormationName, 'Support Tyrannofex Detachment' AS DetachmentName
+    UNION ALL SELECT 'Alpha Hierodule Detachment' AS FormationName, 'Alpha Hierodule Detachment' AS DetachmentName
+    UNION ALL SELECT 'Hierophant Detachment' AS FormationName, 'Hierophant Detachment' AS DetachmentName
+    UNION ALL SELECT 'Malefactor Detachment' AS FormationName, 'Malefactor Detachment' AS DetachmentName
+    UNION ALL SELECT 'Mycetic Spore Detachment' AS FormationName, 'Mycetic Spore Detachment' AS DetachmentName
+    UNION ALL SELECT 'Tervigon Detachment' AS FormationName, 'Tervigon Detachment' AS DetachmentName
+    UNION ALL SELECT 'Off-Table Artillery (Bio-Plasma)' AS FormationName, 'Off-Table Artillery (Bio-Plasma)' AS DetachmentName
+    UNION ALL SELECT 'Off-Table Artillery (Spore-Mine)' AS FormationName, 'Off-Table Artillery (Spore-Mine)' AS DetachmentName
+) AS src
+INNER JOIN Formation f
+    ON f.CodexId = @codexId AND f.FormationName = src.FormationName
+INNER JOIN Detachment d
+    ON d.CodexId = @codexId AND d.DetachmentName = src.DetachmentName;
 

@@ -14,7 +14,7 @@ SELECT n, d FROM (
         'Template',
         'A game component, usually circular, used to represent the area of effect of certain weapons or abilities.
 
-Weapons that use a template have "Template" listed in the Dice column of their unit profile and possess the Template (X) ability. The size of the template is specified in the weapon''s abilities.
+Weapons that use a template have the template size listed in the Dice column of their unit profile (for example Template (7.5 cm) or Flame Template) and possess the matching Template (X) or Flame Template ability.
 
 Firing arc and range are measured between the centre of the firing base and the centre of the template.
 

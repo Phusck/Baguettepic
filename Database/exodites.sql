@@ -1,5 +1,5 @@
--- Exodites 3.0.0 from NetEpicFR300-EnglishTranslation/Exodites 300
--- Replaces Exodites catalog data only; existing armies are preserved.
+-- Exodites 3.0.0 from C:/Files/NetEpicFR300-EnglishTranslation/Exodites 300
+-- Upserts Exodites catalog; preserves army lists and Base/Formation ids.
 
 SET NAMES utf8mb4;
 
@@ -23,6 +23,17 @@ ALTER TABLE `Base`
 ALTER TABLE Weapon
     MODIFY Dice VARCHAR(32) NOT NULL,
     MODIFY ArmourPenetration VARCHAR(16) NOT NULL;
+
+INSERT INTO FormationKind (FormationKindId, KindName)
+SELECT 1, 'Mandatory' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM FormationKind WHERE FormationKindId = 1);
+INSERT INTO FormationKind (FormationKindId, KindName)
+SELECT 2, 'Company' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM FormationKind WHERE FormationKindId = 2);
+INSERT INTO FormationKind (FormationKindId, KindName)
+SELECT 3, 'Special' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM FormationKind WHERE FormationKindId = 3);
+INSERT INTO FormationKind (FormationKindId, KindName)
+SELECT 4, 'Support' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM FormationKind WHERE FormationKindId = 4);
+INSERT INTO FormationKind (FormationKindId, KindName)
+SELECT 5, 'Option' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM FormationKind WHERE FormationKindId = 5);
 
 INSERT INTO Codex (CodexName)
 SELECT 'Exodites'
@@ -56,9 +67,8 @@ DELETE w FROM Weapon w
 INNER JOIN `Base` b ON b.BaseId = w.BaseId
 WHERE b.CodexId = @codexId;
 
-DELETE FROM Formation WHERE CodexId = @codexId;
-DELETE FROM Detachment WHERE CodexId = @codexId;
-DELETE FROM `Base` WHERE CodexId = @codexId;
+DELETE d FROM Detachment d WHERE d.CodexId = @codexId;
+
 DELETE FROM SpecialRule WHERE CodexId = @codexId;
 
 INSERT INTO SpecialAbility (SpecialAbilityName, Description)
@@ -185,7 +195,15 @@ INSERT INTO `Base` (
     (@codexId, 'Fire Storm', 0, '5', 4, '20', '3+', '+3', 0),
     (@codexId, 'Towering Destroyer', 0, '5', 4, '15', '2+', '+5', 0),
     (@codexId, 'Megadon — Assault', 0, '5', 4, '15', '2+', '+8', 0),
-    (@codexId, 'Megadon — Support', 0, '5', 4, '15', '2+', '+7', 0);
+    (@codexId, 'Megadon — Support', 0, '5', 4, '15', '2+', '+7', 0)
+ON DUPLICATE KEY UPDATE
+    DestructionPoints = VALUES(DestructionPoints),
+    Morale = VALUES(Morale),
+    `Class` = VALUES(`Class`),
+    Movement = VALUES(Movement),
+    `Save` = VALUES(`Save`),
+    FA = VALUES(FA),
+    NumberOfTitanWeapons = VALUES(NumberOfTitanWeapons);
 
 SET @fusiliers := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Fusiliers');
 SET @exoditeWarriors := (SELECT BaseId FROM `Base` WHERE CodexId = @codexId AND BaseName = 'Exodite Warriors');
@@ -371,6 +389,10 @@ INSERT INTO Detachment (
     CodexId, DetachmentName, CommandPoints, `Class`
 ) VALUES
     (@codexId, 'Baron Detachment', 0, 2),
+    (@codexId, 'Infantry Company', 0, 1),
+    (@codexId, 'Pentasaur Company', 0, 3),
+    (@codexId, 'Rapid Intervention Company', 0, 2),
+    (@codexId, 'Scout Company', 0, 2),
     (@codexId, 'Bright Stalker Detachment', 0, 4),
     (@codexId, 'Bright Stallion Detachment', 0, 4),
     (@codexId, 'Fire Gale Detachment', 0, 4),
@@ -398,7 +420,10 @@ INSERT INTO Detachment (
     (@codexId, 'Pentasaur — Missile Launcher Detachment', 0, 3),
     (@codexId, 'Pentasaur — Thermal Lance Detachment', 0, 3),
     (@codexId, 'Carnosaur Detachment', 0, 4),
-    (@codexId, 'Vyper Detachment', 0, 2);
+    (@codexId, 'Vyper Detachment', 0, 2)
+ON DUPLICATE KEY UPDATE
+    CommandPoints = VALUES(CommandPoints),
+    `Class` = VALUES(`Class`);
 
 INSERT INTO DetachmentComposition (DetachmentId, BaseId, BaseCount)
 SELECT d.DetachmentId, b.BaseId, src.BaseCount
@@ -444,6 +469,10 @@ INSERT INTO Formation (
     DestructionPoints
 ) VALUES
     (@codexId, 1, 'Baron (Unique)', 125, 0, '1 Baron and 2 Dragoon bases', 0),
+    (@codexId, 2, 'Infantry Company', 0, 0, 'Compulsory: Choose 1 (Fusiliers 75 or Warriors 50); Choose 1 (Fusiliers 125 or Warriors 100); Choose 2 from Fusiliers/Warriors/Scouts/Travois. Optional: 0–1 Special or Additional Special, 0–1 Additional Special, 0–5 Support, any Options.', 0),
+    (@codexId, 2, 'Pentasaur Company', 0, 0, 'Compulsory: Choose 1 Pentasaur variant (discounted); Choose 2 Pentasaur variants (support prices). Optional: 0–1 Special or Additional Special, 0–1 Additional Special, 0–5 Support, any Options.', 0),
+    (@codexId, 2, 'Rapid Intervention Company', 0, 0, 'Compulsory: Choose 1 (Dragon Knights 75 or Combat Walkers 125); Choose 1 (Dragon Knights 125 or Combat Walkers 175); Choose 2 from cavalry/walker list. Optional: 0–1 Special or Additional Special, 0–1 Additional Special, 0–5 Support, any Options.', 0),
+    (@codexId, 2, 'Scout Company', 0, 0, 'Compulsory: Choose 1 (Lethosaur 75 or Raptor 100); Choose 2 (Lethosaur 125 or Raptor 150); plus further scout picks per army book. Optional: 0–1 Special or Additional Special, 0–1 Additional Special, 0–5 Support, any Options.', 0),
     (@codexId, 3, 'Bright Stalker', 325, 0, '3 Bright Stalker bases', 0),
     (@codexId, 3, 'Bright Stallion', 300, 0, '3 Bright Stallion bases', 0),
     (@codexId, 3, 'Fire Gale', 325, 0, '3 Fire Gale bases', 0),
@@ -471,12 +500,22 @@ INSERT INTO Formation (
     (@codexId, 4, 'Pentasaur — Missile', 150, 0, '3 Pentasaur — Missile Launcher bases', 0),
     (@codexId, 4, 'Pentasaur — Thermal', 200, 0, '3 Pentasaur — Thermal Lance bases', 0),
     (@codexId, 4, 'Carnosaur', 150, 0, '1 Carnosaur base', 0),
-    (@codexId, 5, 'Vyper Detachment', 150, 0, '6 Vyper Transport bases', 0);
+    (@codexId, 5, 'Vyper Detachment', 150, 0, '6 Vyper Transport bases', 0)
+ON DUPLICATE KEY UPDATE
+    FormationKindId = VALUES(FormationKindId),
+    PointsCost = VALUES(PointsCost),
+    CommandPoints = VALUES(CommandPoints),
+    Contents = VALUES(Contents),
+    DestructionPoints = VALUES(DestructionPoints);
 
 INSERT INTO FormationDetachment (FormationId, DetachmentId, Quantity)
 SELECT f.FormationId, d.DetachmentId, 1
 FROM (
     SELECT 'Baron (Unique)' AS FormationName, 'Baron Detachment' AS DetachmentName
+    UNION ALL SELECT 'Infantry Company' AS FormationName, 'Infantry Company' AS DetachmentName
+    UNION ALL SELECT 'Pentasaur Company' AS FormationName, 'Pentasaur Company' AS DetachmentName
+    UNION ALL SELECT 'Rapid Intervention Company' AS FormationName, 'Rapid Intervention Company' AS DetachmentName
+    UNION ALL SELECT 'Scout Company' AS FormationName, 'Scout Company' AS DetachmentName
     UNION ALL SELECT 'Bright Stalker' AS FormationName, 'Bright Stalker Detachment' AS DetachmentName
     UNION ALL SELECT 'Bright Stallion' AS FormationName, 'Bright Stallion Detachment' AS DetachmentName
     UNION ALL SELECT 'Fire Gale' AS FormationName, 'Fire Gale Detachment' AS DetachmentName

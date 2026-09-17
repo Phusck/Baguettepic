@@ -117,8 +117,11 @@
                                VerticalOptions="Center" />
         </Grid>
 
-        <Button Grid.Row="3"
-                Text="Edit"
-                Clicked="OnEditClicked" />
+        <VerticalStackLayout x:Name="BottomActions"
+                             Grid.Row="3"
+                             Spacing="8">
+            <Button Text="Edit"
+                    Clicked="OnEditClicked" />
+        </VerticalStackLayout>
     </Grid>
 </ContentPage>

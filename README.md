@@ -4,10 +4,13 @@ Companion app for Palladium NetEpic 3.
 
 ## Rulebook source
 
-Canonical English rulebook and army LaTeX live in a separate repo — not a local Palladium folder:
+Canonical English rulebook and army LaTeX live in a local folder:
 
-- https://github.com/Phusck/NetEpicFR300-EnglishTranslation
+- `C:\Files\NetEpicFR300-EnglishTranslation`
 - Core rules: `Rulebook 303/`
-- Tyranids: `Tyranids 300/`
+- Tyranids: `Tyranids 310/`
+- Exodites: `Exodites 300/`
+- Biel-Tan: `Biel-Tan 310/`
+- Necrons: `Necrons 310/`
 
 Cursor project rules under `.cursor/rules/` point agents at that source of truth.

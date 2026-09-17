@@ -103,9 +103,9 @@ public partial class ArmyBuilderPage : ContentPage
     {
         EditErrorLabel.IsVisible = false;
         var name = EditNameEntry.Text?.Trim() ?? string.Empty;
-        if (name.Length == 0)
+        if (!WindowsFolderName.IsValid(name, out var nameError))
         {
-            EditErrorLabel.Text = "Enter a name.";
+            EditErrorLabel.Text = nameError;
             EditErrorLabel.IsVisible = true;
             return;
         }

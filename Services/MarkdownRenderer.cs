@@ -80,4 +80,7 @@ public static class MarkdownRenderer
 
         return new HtmlWebViewSource { Html = html };
     }
+
+    public static string ToPlainText(string? markdown) =>
+        Markdown.ToPlainText(markdown ?? string.Empty, Pipeline).Trim();
 }

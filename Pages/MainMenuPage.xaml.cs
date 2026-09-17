@@ -1,3 +1,4 @@
+using System.Reflection;
 using Baguettepic.Services;
 
 namespace Baguettepic.Pages;
@@ -7,6 +8,7 @@ public partial class MainMenuPage : ContentPage
     public MainMenuPage()
     {
         InitializeComponent();
+        VersionLabel.Text = ReadDisplayVersion();
     }
 
     protected override void OnAppearing()
@@ -33,5 +35,22 @@ public partial class MainMenuPage : ContentPage
     {
         SessionService.Instance.Logout();
         await Shell.Current.GoToAsync("//Login");
+    }
+
+    static string ReadDisplayVersion()
+    {
+        var informational = typeof(App).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion;
+        if (!string.IsNullOrWhiteSpace(informational))
+        {
+            var plus = informational.IndexOf('+');
+            if (plus >= 0)
+                informational = informational[..plus];
+            if (!string.IsNullOrWhiteSpace(informational))
+                return informational;
+        }
+
+        return AppInfo.Current.VersionString;
     }
 }

@@ -1,4 +1,4 @@
-"""Generate tyranids.sql and tyranids-army-formations.sql from Tyranids 300."""
+"""Generate tyranids.sql and tyranids-army-formations.sql from Tyranids 310."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -85,22 +85,26 @@ ABILITIES: list[tuple[str, str]] = [
     (
         "Semi-Synaptic",
         "Detachments with this ability may receive orders normally, even while outside a Synapse radius.\n\n"
-        "If they fail a Hive Mind Test, they act as Slave creatures and follow their listed Instinct.",
+        "If they fail a Hive Mind Test, they act as Slave creatures and follow their listed Instinct.\n\n"
+        "Bio-Titans have no Instinct. If they fail a Hive Mind Test, they do not follow an Instinct order.",
     ),
     (
         "Semi-Synaptic (Hunt)",
         "Detachments with this ability may receive orders normally, even while outside a Synapse radius.\n\n"
-        "If they fail a Hive Mind Test, they act as Slave creatures and follow the Hunt Instinct.",
+        "If they fail a Hive Mind Test, they act as Slave creatures and follow the Hunt Instinct.\n\n"
+        "Bio-Titans have no Instinct. If they fail a Hive Mind Test, they do not follow an Instinct order.",
     ),
     (
         "Semi-Synaptic (Devastation)",
         "Detachments with this ability may receive orders normally, even while outside a Synapse radius.\n\n"
-        "If they fail a Hive Mind Test, they act as Slave creatures and follow the Devastation Instinct.",
+        "If they fail a Hive Mind Test, they act as Slave creatures and follow the Devastation Instinct.\n\n"
+        "Bio-Titans have no Instinct. If they fail a Hive Mind Test, they do not follow an Instinct order.",
     ),
     (
         "Semi-Synaptic (Nest)",
         "Detachments with this ability may receive orders normally, even while outside a Synapse radius.\n\n"
-        "If they fail a Hive Mind Test, they act as Slave creatures and follow the Nest Instinct.",
+        "If they fail a Hive Mind Test, they act as Slave creatures and follow the Nest Instinct.\n\n"
+        "Bio-Titans have no Instinct. If they fail a Hive Mind Test, they do not follow an Instinct order.",
     ),
     (
         "Synaptic Overload",
@@ -122,17 +126,15 @@ ABILITIES: list[tuple[str, str]] = [
         "During the Combat Phase, every base within 15 cm of the centre of the Bio-Titan is hit:\n\n"
         " • On a 4+ if the Bio-Titan has an Advance or First Fire order.\n"
         " • On a 5+ if the Bio-Titan has a Charge or Forced March order.\n\n"
-        "Spore Pods have AP 0 and possess the Reduces Cover (-3) and Bio-Toxin abilities.\n\n"
+        "Spore Pods have AP 0 and possess the Reduces Cover (-3) and Bio-Toxin abilities. Purchasing Spore Pods increases the Bio-Titan's Close Defences to 4+.\n\n"
         "Spore Pods function even if the Bio-Titan is pinned in an assault. In this case, resolve the Spore Pod attacks before resolving the assault. Any damage inflicted counts towards the assault's combat result.\n\n"
-        "Spore Pods do not suffer a To-Hit penalty when the Bio-Titan is engaged in an assault.\n\n"
-        "Spore Pods increase the Bio-Titan's Close Defences to 4+.",
+        "Spore Pods do not suffer a To-Hit penalty when the Bio-Titan is engaged in an assault.",
     ),
     (
         "Spore-Mine",
         "When an attack is made with a Spore-Mines weapon, it creates a hazardous area in addition to resolving the normal effects of the attack.\n\n"
         "Leave the template in the position where the attack was resolved. It remains in play for the turn in which it was fired and for the following turn, after which it is removed.\n\n"
-        "The area counts as Dangerous Terrain (4+/AP 0) with the Bio-Toxin ability.\n\n"
-        "The Spore-Mine area may be targeted by shooting attacks. Each successful hit removes one Spore-Mine from the area.",
+        "The area counts as Dangerous Terrain (4+/AP 0) with the Bio-Toxin ability.",
     ),
     (
         "Mycetic Spore",
@@ -460,6 +462,10 @@ ABILITIES: list[tuple[str, str]] = [
         " • Entangle and Damage (+1) in Assault.\n"
         " • First Strike (1/2+/AP -4) and Damage (+1).",
     ),
+    (
+        "Rapid Digestion",
+        "If a base with this ability wins an assault duel against a Class 1 or 2 base, it recovers one lost Wound.",
+    ),
 ]
 
 PSYCHIC_POWERS: list[tuple[str, str]] = [
@@ -482,8 +488,8 @@ PSYCHIC_POWERS: list[tuple[str, str]] = [
     (
         "Energy Torrent",
         "[Combat Phase, Shooting]: The Dominatrix focuses its psychic energy to destroy the enemy. Choose one of the two firing modes when it is activated.\n\n"
-        "Energy Torrent -- Focused: 90 cm, 1 die, 3+, AP -4, 1D3 Hits.\n\n"
-        "Energy Torrent -- Diffuse: 90 cm, Template, 3+, AP -1, Template (7.5 cm), Reduces Cover (-1).",
+        "Energy Torrent -- Focused: 90 cm, 1 die, 3+, AP -3, Psychic Attack, Multiple Hits (1D3).\n\n"
+        "Energy Torrent -- Diffuse: 90 cm, Template, 3+, AP -1, Psychic Attack, Template (7.5 cm), Reduces Cover (-1).",
     ),
     (
         "Synaptic Beacon",
@@ -495,7 +501,6 @@ SPECIAL_RULES: list[tuple[str, str]] = [
     (
         "Army Creation",
         "Tyranids select their troops differently from other armies and do not follow the standard army-building rules. Instead, detachments of Synapse creatures generate Command Points, while other formations consume them.\n\n"
-        "Before another Synapse Formation may be selected, all Command Points generated by the previously selected Synapse Formations must have been spent.\n\n"
         "Tyranid Titans are relatively rare. The army may include no more than one Tyranid Titan for every 5 Command Points generated.",
     ),
     (
@@ -504,13 +509,14 @@ SPECIAL_RULES: list[tuple[str, str]] = [
         "Their Morale value instead represents their connection to the Hive Mind. When a Tyranid detachment becomes Broken, it must make a Hive Mind Test. This test is resolved in the same manner as a Morale Test.\n\n"
         "If the test is failed, the detachment follows its Instinct, as described by its Slave ability, and receives an Instinct counter. If the test is passed, there are no further consequences.\n\n"
         "A detachment activated while it has an Instinct counter automatically removes the counter after completing its activation.\n\n"
+        "If a test is failed during movement, the detachment finishes its movement and follows its Instinct during the Combat Phase.\n\n"
         "A detachment with an Instinct counter suffers a -1 AF penalty to represent its disorganisation.",
     ),
     (
         "Adaptations",
         "Tyranids excel at adapting to their opponents. To represent this, after seeing the opposing player's army list but before the battle begins, the Tyranid player selects adaptations.\n\n"
         "Every Tyranid army has 10 points to spend on adaptations from the following list:\n\n"
-        "Bio-Acid (7 points): For every complete 2,000 points in the army, one attack die from one weapon may gain Damage (+1) and improve its AP by 1. The use of this effect must be declared before making the To-Hit roll.\n\n"
+        "Bio-Acid (5 points): For every complete 2,000 points in the army, one attack die from one weapon may gain Damage (+1) and improve its AP by 1. The use of this effect must be declared before making the To-Hit roll.\n\n"
         "Bio-Targeting (7 points): Every unit in the army may reroll results of 1 on its ranged To-Hit rolls.\n\n"
         "Endless Swarm (7 points): During the End-of-Turn Effects step, each Hormagaunt, Gargoyle, Ripper, Termagant, or Barbgaunt detachment recovers 1D3 previously lost bases. The recovered bases must be placed in coherency with their detachment and outside all enemy zones of control.\n\n"
         "Velocity (7 points): Increase the total movement of every base in the army by 5 cm. Apply this bonus after doubling or tripling the base's movement according to its order.\n\n"
@@ -540,11 +546,12 @@ SPECIAL_RULES: list[tuple[str, str]] = [
     ),
     (
         "Tyranid Titan Damage Effects",
+        "Damage effects are progressive: the first damage to a location applies the first effect, and further damage applies the following effects on the list.\n\n"
         "### Body\n\n"
         "| Result | Effect |\n"
         "| --- | --- |\n"
-        "| 1 | 1 additional point of damage |\n"
-        "| 2 | 1 additional point of damage; reduce Regeneration by 1 |\n"
+        "| 1 | 1 additional point of damage; reduce Regeneration by 1 |\n"
+        "| 2 | 1 additional point of damage |\n"
         "| 3+ | 2 additional points of damage |\n\n"
         "### Weapon\n\n"
         "| Result | Effect |\n"
@@ -559,7 +566,7 @@ SPECIAL_RULES: list[tuple[str, str]] = [
         "| 2 | Reduce the Titan's base Movement by 5 cm (Repair on 4+). From this damage onward, the Titan falls if it is destroyed. |\n"
         "| 3 | Reduce the Titan's base Movement by an additional 5 cm (Repair on 4+) |\n"
         "| 4 | Immobilised; 1 additional point of damage |\n"
-        "| 5+ | Damage to the Body |\n\n"
+        "| 6+ | Damage to the Body |\n\n"
         "### Head\n\n"
         "| Result | Effect |\n"
         "| --- | --- |\n"
@@ -570,8 +577,8 @@ SPECIAL_RULES: list[tuple[str, str]] = [
         "| Result | Effect |\n"
         "| --- | --- |\n"
         "| 1 | -1 AF; lose 1D3 transported bases |\n"
-        "| 2 | -1 AF; 1 additional point of damage; lose 1D3 transported bases |\n"
-        "| 3+ | -1 AF; damage to the Body; reduce Regeneration by 1; lose all transported bases |",
+        "| 2 | -1 AF; lose 1D3 transported bases |\n"
+        "| 3+ | -1 AF; damage to the Body; lose all transported bases |",
     ),
 ]
 
@@ -609,7 +616,7 @@ TITAN_WEAPONS = [
     ),
     w(
         "Bile Spitter -- Focused",
-        "60 cm",
+        "45 cm",
         "3",
         "3+",
         "-2",
@@ -618,7 +625,7 @@ TITAN_WEAPONS = [
     ),
     w(
         "Bile Spitter -- Diffuse",
-        "60 cm",
+        "45 cm",
         "Template",
         "4+",
         "0",
@@ -651,7 +658,7 @@ TITAN_WEAPONS = [
         "1",
         "2+",
         "-4",
-        [("Tentacles", "")],
+        [("Tentacles", ""), ("Damage (+X)", "1")],
         titan=1,
     ),
 ]
@@ -842,7 +849,7 @@ BASES = [
             ("Synapse (X)", "20 cm"),
             ("Regeneration (X+)", "5"),
         ],
-        weapons=[w("Heavy Venom Cannon", "45 cm", "2", "4+", "-1")],
+        weapons=[w("Deathspitter", "45 cm", "2", "4+", "-1")],
     ),
     dict(
         name="Venomthrope",
@@ -871,7 +878,7 @@ BASES = [
                 "Warp Blast",
                 "60 cm",
                 "1",
-                "4+",
+                "5+",
                 "Psy",
                 [("Psychic Attack", ""), ("Anti-Aircraft", "")],
             )
@@ -1045,7 +1052,7 @@ BASES = [
         name="Tervigon",
         cls=3,
         mv="20",
-        save="2+",
+        save="3+",
         fa="+5",
         morale="Attached",
         abilities=[
@@ -1082,6 +1089,23 @@ BASES = [
         weapons=[
             w("Salivary Cannon", "20 cm", "2", "4+", "0", [("Reduces Cover (X)", "-3")])
         ],
+    ),
+    dict(
+        name="Dimachaeron",
+        cls=4,
+        mv="25",
+        save="3+",
+        fa="+8",
+        morale="5",
+        abilities=[
+            ("Wounds (X)", "2"),
+            ("Fear", ""),
+            ("Close Defences (X+)", "5"),
+            ("Regeneration (X+)", "5"),
+            ("Semi-Synaptic (Devastation)", ""),
+            ("Rapid Digestion", ""),
+        ],
+        weapons=[melee("Slashing Claws")],
     ),
     dict(
         name="Barbed Hierodule",
@@ -1196,28 +1220,10 @@ BASES = [
             ("Energy Torrent", ""),
             ("Synaptic Beacon", ""),
         ],
+        # Profile weapon only. Energy Torrent Focused/Diffuse are psychic firing modes
+        # (special-abilities.tex), not unit weapons — see PSYCHIC_POWERS["Energy Torrent"].
         weapons=[
             w("Bio-Plasma Cannons", "75 cm", "4", "4+", "-3", [("Turret", "")]),
-            w(
-                "Energy Torrent -- Focused",
-                "90 cm",
-                "1",
-                "3+",
-                "-4",
-                [("Psychic Attack", "")],
-            ),
-            w(
-                "Energy Torrent -- Diffuse",
-                "90 cm",
-                "Template",
-                "3+",
-                "-1",
-                [
-                    ("Psychic Attack", ""),
-                    ("Template (X)", "7.5 cm"),
-                    ("Reduces Cover (X)", "-1"),
-                ],
-            ),
         ],
     ),
     dict(
@@ -1232,7 +1238,7 @@ BASES = [
             ("Regeneration (X+)", "5"),
             ("Synapse (X)", "20 cm"),
             ("Wounds (X)", "3"),
-            ("Transport (X Gargoyles)", "5"),
+            ("Transport (X Gargoyles)", "10"),
             ("Infiltration", ""),
         ],
         weapons=[
@@ -1278,7 +1284,7 @@ BASES = [
         mv="20",
         save="2+",
         fa="+8",
-        morale="7",
+        morale="5",
         abilities=[
             ("Wounds (X)", "2"),
             ("Close Defences (X+)", "4"),
@@ -1295,7 +1301,7 @@ BASES = [
         mv="15",
         save="2+",
         fa="+5",
-        morale="7",
+        morale="5",
         abilities=[
             ("Wounds (X)", "2"),
             ("Close Defences (X+)", "6"),
@@ -1321,7 +1327,7 @@ BASES = [
             ("Wounds (X)", "6"),
             ("Terror", ""),
             ("Close Defences (X+)", "5"),
-            ("Regeneration (X+)", "4"),
+            ("Regeneration (X+)", "5"),
             ("Agile", ""),
             ("Semi-Synaptic", ""),
             ("Damage (+X) in Assault", "2"),
@@ -1341,7 +1347,7 @@ BASES = [
             ("Wounds (X)", "9"),
             ("Terror", ""),
             ("Close Defences (X+)", "5"),
-            ("Regeneration (X+)", "4"),
+            ("Regeneration (X+)", "5"),
             ("Agile", ""),
             ("Semi-Synaptic", ""),
             ("Transport (X)", "5"),
@@ -1413,18 +1419,18 @@ FORMATIONS = [
     formation(7, "Hive Tyrant Detachment", "3 Hive Tyrant bases", 3, 250, one("Hive Tyrant Detachment", 3, 2, "Hive Tyrant", 3)),
     formation(7, "Norn Queen Detachment", "1 Norn Queen base", 3, 275, one("Norn Queen Detachment", 3, 4, "Norn Queen", 1)),
     formation(7, "Trygon Detachment", "1 Trygon base", 1, 200, one("Trygon Detachment", 1, 4, "Trygon", 1)),
-    formation(8, "Barbgaunt Detachment", "5 Barbgaunt bases", -1, 100, one("Barbgaunt Detachment", -1, 1, "Barbgaunt", 5)),
+    formation(8, "Barbgaunt Detachment", "5 Barbgaunt bases", -1, 200, one("Barbgaunt Detachment", -1, 1, "Barbgaunt", 5)),
     formation(8, "Hive Guard Detachment", "5 Hive Guard bases", -1, 200, one("Hive Guard Detachment", -1, 1, "Hive Guard", 5)),
-    formation(8, "Gargoyle Detachment", "5 Gargoyle bases", -1, 125, one("Gargoyle Detachment", -1, 1, "Gargoyles", 5)),
+    formation(8, "Gargoyle Detachment", "5 Gargoyle bases", -1, 200, one("Gargoyle Detachment", -1, 1, "Gargoyles", 5)),
     formation(8, "Genestealer Detachment", "5 Genestealer bases", -1, 200, one("Genestealer Detachment", -1, 1, "Genestealers", 5)),
-    formation(8, "Hormagaunt Detachment", "5 Hormagaunt bases", -1, 100, one("Hormagaunt Detachment", -1, 1, "Hormagaunts", 5)),
+    formation(8, "Hormagaunt Detachment", "5 Hormagaunt bases", -1, 175, one("Hormagaunt Detachment", -1, 1, "Hormagaunts", 5)),
     formation(8, "Lictor Detachment", "5 Lictor bases", -1, 225, one("Lictor Detachment", -1, 1, "Lictor", 5)),
-    formation(8, "Termagant Detachment", "10 Termagant bases", -1, 150, one("Termagant Detachment", -1, 1, "Termagants", 10)),
+    formation(8, "Termagant Detachment", "10 Termagant bases", -1, 175, one("Termagant Detachment", -1, 1, "Termagants", 10)),
     formation(8, "Ripper Detachment", "10 Ripper bases", -1, 100, one("Ripper Detachment", -1, 1, "Rippers", 10)),
     formation(8, "Ravener Detachment", "5 Ravener bases", -1, 200, one("Ravener Detachment", -1, 2, "Raveners", 5)),
     formation(8, "Carnifex Detachment", "3 Carnifex bases", -1, 175, one("Carnifex Detachment", -1, 2, "Carnifex", 3)),
     formation(8, "Venomthrope Detachment", "3 Venomthrope bases", -1, 100, one("Venomthrope Detachment", -1, 2, "Venomthrope", 3)),
-    formation(8, "Zoanthrope Detachment", "3 Zoanthrope bases", -1, 175, one("Zoanthrope Detachment", -1, 2, "Zoanthrope", 3)),
+    formation(8, "Zoanthrope Detachment", "3 Zoanthrope bases", -1, 150, one("Zoanthrope Detachment", -1, 2, "Zoanthrope", 3)),
     formation(8, "Biovore Detachment", "3 Biovore bases", -1, 225, one("Biovore Detachment", -1, 3, "Biovore", 3)),
     formation(8, "Dactylis Detachment", "3 Dactylis bases", -1, 250, one("Dactylis Detachment", -1, 3, "Dactylis", 3)),
     formation(8, "Exocrine Detachment", "3 Exocrine bases", -1, 225, one("Exocrine Detachment", -1, 3, "Exocrine", 3)),
@@ -1433,6 +1439,7 @@ FORMATIONS = [
     formation(8, "Pyrovore Detachment", "3 Pyrovore bases", -1, 125, one("Pyrovore Detachment", -1, 3, "Pyrovore", 3)),
     formation(8, "Toxicrene Detachment", "3 Toxicrene bases", -1, 150, one("Toxicrene Detachment", -1, 3, "Toxicrene", 3)),
     formation(8, "Virago Detachment", "3 Virago bases", -1, 200, one("Virago Detachment", -1, 3, "Virago", 3)),
+    formation(8, "Dimachaeron Detachment", "3 Dimachaeron bases", -1, 275, one("Dimachaeron Detachment", -1, 4, "Dimachaeron", 3)),
     formation(8, "Barbed Hierodule Detachment", "1 Barbed Hierodule base", -2, 300, one("Barbed Hierodule Detachment", -2, 4, "Barbed Hierodule", 1)),
     formation(8, "Scythed Hierodule Detachment", "1 Scythed Hierodule base", -2, 250, one("Scythed Hierodule Detachment", -2, 4, "Scythed Hierodule", 1)),
     formation(8, "Razorfex Detachment", "3 Razorfex bases", -1, 300, one("Razorfex Detachment", -1, 4, "Razorfex", 3)),
@@ -1442,7 +1449,7 @@ FORMATIONS = [
     formation(8, "Hierophant Detachment", "1 Hierophant base (3 weapons must be purchased)", -2, 425, one("Hierophant Detachment", -2, 6, "Hierophant", 1)),
     formation(5, "Malefactor Detachment", "3 Malefactor bases", -1, 125, one("Malefactor Detachment", -1, 3, "Malefactor", 3)),
     formation(5, "Mycetic Spore Detachment", "Enough Mycetic Spores to transport one Class 1 or 2 detachment", 0, 50, one("Mycetic Spore Detachment", 0, 3, "Mycetic Spore", 1)),
-    formation(5, "Tervigon Detachment", "3 Tervigon bases", -1, 150, one("Tervigon Detachment", -1, 3, "Tervigon", 3)),
+    formation(5, "Tervigon Detachment", "3 Tervigon bases", -1, 125, one("Tervigon Detachment", -1, 3, "Tervigon", 3)),
     formation(6, "Off-Table Artillery (Bio-Plasma)", "1 Bio-Plasma Shot (Limit: 1 per 2,000 points)", -1, 100, one("Off-Table Artillery (Bio-Plasma)", -1, 0, "Bio-Plasma Shot", 1)),
     formation(6, "Off-Table Artillery (Spore-Mine)", "1 Spore-Mine Shot (Limit: 1 per 2,000 points)", -1, 100, one("Off-Table Artillery (Spore-Mine)", -1, 0, "Spore-Mine Shot", 1)),
 ]
@@ -1480,8 +1487,8 @@ CREATE TABLE IF NOT EXISTS TitanWeapon (
 
 def emit_tyranids_sql() -> str:
     lines = [
-        "-- Tyranids 3.0.0 from NetEpicFR300-EnglishTranslation/Tyranids 300",
-        "-- Replaces the dummy Tyranid seed. Also deletes all army lists.",
+        "-- Tyranids 3.1.0 from C:/Files/NetEpicFR300-EnglishTranslation/Tyranids 310",
+        "-- Upserts Tyranid catalog data. Preserves army lists and Base/Formation ids.",
         "",
         "SET NAMES utf8mb4;",
         "",
@@ -1528,17 +1535,12 @@ def emit_tyranids_sql() -> str:
         "INSERT INTO FormationKind (FormationKindId, KindName)",
         "SELECT 8, 'Slave' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM FormationKind WHERE FormationKindId = 8);",
         "",
-        "DELETE FROM ArmyFormation;",
-        "DELETE FROM Army;",
-        "",
         "INSERT INTO Codex (CodexName)",
         "SELECT 'Tyranids'",
         "WHERE NOT EXISTS (SELECT 1 FROM Codex WHERE CodexName = 'Tyranids');",
         "",
         "SET @codexId := (SELECT CodexId FROM Codex WHERE CodexName = 'Tyranids');",
         "UPDATE Codex SET UsesCommandPoints = 1 WHERE CodexId = @codexId;",
-        "",
-        "DELETE FROM TitanWeapon WHERE CodexId = @codexId;",
         "",
         "DELETE wsa FROM WeaponSpecialAbility wsa",
         "INNER JOIN Weapon w ON w.WeaponId = wsa.WeaponId",
@@ -1565,50 +1567,18 @@ def emit_tyranids_sql() -> str:
         "INNER JOIN `Base` b ON b.BaseId = w.BaseId",
         "WHERE b.CodexId = @codexId;",
         "",
-        "DELETE FROM Formation WHERE CodexId = @codexId;",
-        "DELETE FROM Detachment WHERE CodexId = @codexId;",
-        "DELETE FROM `Base` WHERE CodexId = @codexId;",
+        "DELETE d FROM Detachment d",
+        "WHERE d.CodexId = @codexId;",
+        "",
         "DELETE FROM SpecialRule WHERE CodexId = @codexId;",
         "",
-        "INSERT INTO SpecialAbility (SpecialAbilityName, Description)",
-        "SELECT n, d FROM (",
-        union_rows(ABILITIES),
-        ") AS src",
-        "WHERE NOT EXISTS (",
-        "    SELECT 1 FROM SpecialAbility sa WHERE sa.SpecialAbilityName = src.n",
-        ");",
-        "",
-        "UPDATE SpecialAbility sa",
-        "INNER JOIN (",
-        union_rows(ABILITIES),
-        ") AS src ON src.n = sa.SpecialAbilityName",
-        "SET sa.Description = src.d;",
-        "",
-        "INSERT INTO PsychicPower (PsychicPowerName, Description)",
-        "SELECT n, d FROM (",
-        union_rows(PSYCHIC_POWERS),
-        ") AS src",
-        "WHERE NOT EXISTS (",
-        "    SELECT 1 FROM PsychicPower pp WHERE pp.PsychicPowerName = src.n",
-        ");",
-        "",
-        "UPDATE PsychicPower pp",
-        "INNER JOIN (",
-        union_rows(PSYCHIC_POWERS),
-        ") AS src ON src.n = pp.PsychicPowerName",
-        "SET pp.Description = src.d;",
-        "",
-        "INSERT INTO SpecialRule (CodexId, SpecialRuleName, Description)",
-        "SELECT @codexId, n, d FROM (",
-        union_rows(SPECIAL_RULES),
-        ") AS src;",
-        "",
-        "-- Figure PNGs are stored in Base.Image; run upload_base_images.py after this seed.",
+        "-- Preserve Base and Formation rows (and army lists). Upsert catalog fields.",
         "INSERT INTO `Base` (",
         "    CodexId, BaseName, DestructionPoints,",
         "    Morale, `Class`, Movement, `Save`, FA, NumberOfTitanWeapons",
         ") VALUES",
     ]
+
     base_values = []
     for b in BASES:
         titan = b.get("titan", 0)
@@ -1617,8 +1587,56 @@ def emit_tyranids_sql() -> str:
             f"'{sql_str(b['morale'])}', {b['cls']}, '{sql_str(b['mv'])}', "
             f"'{sql_str(b['save'])}', '{sql_str(b['fa'])}', {titan})"
         )
-    lines.append(",\n".join(base_values) + ";")
+    lines.append(",\n".join(base_values))
+    lines.append("ON DUPLICATE KEY UPDATE")
+    lines.append("    DestructionPoints = VALUES(DestructionPoints),")
+    lines.append("    Morale = VALUES(Morale),")
+    lines.append("    `Class` = VALUES(`Class`),")
+    lines.append("    Movement = VALUES(Movement),")
+    lines.append("    `Save` = VALUES(`Save`),")
+    lines.append("    FA = VALUES(FA),")
+    lines.append("    NumberOfTitanWeapons = VALUES(NumberOfTitanWeapons);")
     lines.append("")
+
+    lines.extend(
+        [
+            "INSERT INTO SpecialAbility (SpecialAbilityName, Description)",
+            "SELECT n, d FROM (",
+            union_rows(ABILITIES),
+            ") AS src",
+            "WHERE NOT EXISTS (",
+            "    SELECT 1 FROM SpecialAbility sa WHERE sa.SpecialAbilityName = src.n",
+            ");",
+            "",
+            "UPDATE SpecialAbility sa",
+            "INNER JOIN (",
+            union_rows(ABILITIES),
+            ") AS src ON src.n = sa.SpecialAbilityName",
+            "SET sa.Description = src.d;",
+            "",
+            "INSERT INTO PsychicPower (PsychicPowerName, Description)",
+            "SELECT n, d FROM (",
+            union_rows(PSYCHIC_POWERS),
+            ") AS src",
+            "WHERE NOT EXISTS (",
+            "    SELECT 1 FROM PsychicPower pp WHERE pp.PsychicPowerName = src.n",
+            ");",
+            "",
+            "UPDATE PsychicPower pp",
+            "INNER JOIN (",
+            union_rows(PSYCHIC_POWERS),
+            ") AS src ON src.n = pp.PsychicPowerName",
+            "SET pp.Description = src.d;",
+            "",
+            "INSERT INTO SpecialRule (CodexId, SpecialRuleName, Description)",
+            "SELECT @codexId, n, d FROM (",
+            union_rows(SPECIAL_RULES),
+            ") AS src;",
+            "",
+            "-- Figure PNGs are stored in Base.Image; run upload_base_images.py for new units.",
+        ]
+    )
+
     for b in BASES:
         lines.append(
             f"SET {var_name(b['name'])} := (SELECT BaseId FROM `Base` "
@@ -1706,7 +1724,9 @@ def emit_tyranids_sql() -> str:
         lines.append("INNER JOIN Weapon w ON w.BaseId = src.BaseId AND w.`Name` = src.WeaponName")
         lines.append("INNER JOIN SpecialAbility sa ON sa.SpecialAbilityName = src.AbilityName;")
         lines.append("")
+
     lines.extend(emit_titan_catalog_sql())
+    lines.append(emit_formations_body())
     return "\n".join(lines) + "\n"
 
 
@@ -1729,32 +1749,25 @@ def emit_titan_catalog_sql() -> list[str]:
     ]
 
 
-def emit_formations_sql() -> str:
-    lines = [
-        "-- Tyranids 3.0.0 army formations from",
-        "-- NetEpicFR300-EnglishTranslation/Tyranids 300/army-formations.tex",
-        "",
-        "SET NAMES utf8mb4;",
-        "",
-        "SET @codexId := (SELECT CodexId FROM Codex WHERE CodexName = 'Tyranids');",
-        "",
-    ]
+def emit_formations_body() -> str:
+    lines: list[str] = []
     det_rows = []
-    seen = set()
+    seen: set[str] = set()
     for f in FORMATIONS:
         for det in f["dets"]:
             dname, dcp, dcls, _ = det
             if dname in seen:
                 continue
             seen.add(dname)
-            det_rows.append(
-                f"    (@codexId, '{sql_str(dname)}', {dcp}, {dcls})"
-            )
+            det_rows.append(f"    (@codexId, '{sql_str(dname)}', {dcp}, {dcls})")
     if det_rows:
         lines.append("INSERT INTO Detachment (")
         lines.append("    CodexId, DetachmentName, CommandPoints, `Class`")
         lines.append(") VALUES")
-        lines.append(",\n".join(det_rows) + ";")
+        lines.append(",\n".join(det_rows))
+        lines.append("ON DUPLICATE KEY UPDATE")
+        lines.append("    CommandPoints = VALUES(CommandPoints),")
+        lines.append("    `Class` = VALUES(`Class`);")
         lines.append("")
 
     comp_union = []
@@ -1790,7 +1803,13 @@ def emit_formations_sql() -> str:
     lines.append("    CodexId, FormationKindId, FormationName, PointsCost, CommandPoints, Contents,")
     lines.append("    DestructionPoints")
     lines.append(") VALUES")
-    lines.append(",\n".join(form_rows) + ";")
+    lines.append(",\n".join(form_rows))
+    lines.append("ON DUPLICATE KEY UPDATE")
+    lines.append("    FormationKindId = VALUES(FormationKindId),")
+    lines.append("    PointsCost = VALUES(PointsCost),")
+    lines.append("    CommandPoints = VALUES(CommandPoints),")
+    lines.append("    Contents = VALUES(Contents),")
+    lines.append("    DestructionPoints = VALUES(DestructionPoints);")
     lines.append("")
 
     fd_union = []
@@ -1815,7 +1834,20 @@ def emit_formations_sql() -> str:
         lines.append("    ON d.CodexId = @codexId AND d.DetachmentName = src.DetachmentName;")
         lines.append("")
 
-    lines.extend(emit_titan_catalog_sql())
+    return "\n".join(lines)
+
+
+def emit_formations_sql() -> str:
+    lines = [
+        "-- Tyranids 3.1.0 army formations from",
+        "-- C:/Files/NetEpicFR300-EnglishTranslation/Tyranids 310/army-formations.tex",
+        "",
+        "SET NAMES utf8mb4;",
+        "",
+        "SET @codexId := (SELECT CodexId FROM Codex WHERE CodexName = 'Tyranids');",
+        "",
+        emit_formations_body(),
+    ]
     return "\n".join(lines) + "\n"
 
 

@@ -1,6 +1,5 @@
 -- Baguettepic schema from
--- https://github.com/Phusck/NetEpicFR300-EnglishTranslation
--- Rulebook 303/class-diagram.md (branch Development)
+-- C:\Files\NetEpicFR300-EnglishTranslation\Rulebook 303\class-diagram.md
 -- Database: baguettepic
 --
 -- Hierarchy: Army buys Formations. A Formation holds Detachments.
